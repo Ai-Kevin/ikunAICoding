@@ -1,0 +1,103 @@
+:root {
+  --brand-primary: #2f6bff;
+  --brand-primary-dark: #1f56e0;
+  --brand-gradient: linear-gradient(135deg, #2f6bff 0%, #4f8bff 100%);
+  --page-bg: #f5f7fb;
+  --card-bg: #ffffff;
+  --text-main: #1f2533;
+  --text-regular: #4a5163;
+  --text-secondary: #8a91a3;
+  --border-light: #eef0f5;
+  --success: #18b566;
+  --danger: #f0494b;
+  --warning: #ff9f1c;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'PingFang SC', 'Microsoft YaHei', -apple-system, 'Segoe UI',
+    Roboto, Helvetica, Arial, sans-serif;
+  background: var(--page-bg);
+  color: var(--text-main);
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: #d4d8e2;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.brand-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  .logo-mark {
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    background: var(--brand-gradient);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: 800;
+    font-size: 20px;
+    box-shadow: 0 6px 14px rgba(47, 107, 255, 0.35);
+  }
+
+  .logo-text {
+    line-height: 1.1;
+    .logo-title {
+      font-size: 17px;
+      font-weight: 800;
+      color: var(--text-main);
+      .pro {
+        color: var(--brand-primary);
+      }
+    }
+    .logo-sub {
+      font-size: 11px;
+      color: var(--text-secondary);
+      letter-spacing: 2px;
+    }
+  }
+}
+
+.page-card {
+  background: var(--card-bg);
+  border-radius: 12px;
+  border: 1px solid var(--border-light);
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-main);
+}
