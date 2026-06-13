@@ -1,14 +1,27 @@
 <template>
-  <div class="plans" v-loading="loading">
-    <div class="page-card head-card">
-      <div>
-        <div class="section-title" style="font-size: 18px">测试计划</div>
-        <p class="sub">管理与编排自动化测试计划，可按计划批量执行用例。</p>
+  <div class="page-shell plans" v-loading="loading">
+    <div class="page-header">
+      <el-breadcrumb separator="/" class="page-crumb">
+        <el-breadcrumb-item>测试计划</el-breadcrumb-item>
+        <el-breadcrumb-item>计划列表</el-breadcrumb-item>
+      </el-breadcrumb>
+      <div class="header-main">
+        <div>
+          <div class="page-title-row">
+            <h1>测试计划</h1>
+          </div>
+          <div class="meta-grid">
+            <span>共 <em>{{ plans.length }}</em> 个计划</span>
+            <span>管理与编排自动化测试计划，可按计划批量执行用例</span>
+          </div>
+        </div>
+        <div class="header-actions">
+          <el-button type="primary" round :icon="Plus" @click="openDialog">新建测试计划</el-button>
+        </div>
       </div>
-      <el-button type="primary" :icon="Plus" @click="openDialog">新建测试计划</el-button>
     </div>
 
-    <div class="page-card">
+    <div class="glass-inner panel-pad">
       <el-table :data="plans" style="width: 100%">
         <el-table-column prop="id" label="ID" width="70" />
         <el-table-column prop="name" label="计划名称" min-width="180" />
@@ -29,7 +42,7 @@
         </el-table-column>
         <el-table-column label="操作" width="140">
           <template #default="{ row }">
-            <el-button link type="success" size="small" @click="runPlan(row)">执行</el-button>
+            <el-button link type="primary" size="small" @click="runPlan(row)">执行</el-button>
             <el-button link type="danger" size="small" @click="removePlan(row)">删除</el-button>
           </template>
         </el-table-column>
@@ -58,8 +71,8 @@
         <el-form-item label="计划描述"><el-input v-model="form.description" type="textarea" :rows="3" /></el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialog = false">取消</el-button>
-        <el-button type="primary" :loading="saving" @click="create">创建</el-button>
+        <el-button round @click="dialog = false">取消</el-button>
+        <el-button type="primary" round :loading="saving" @click="create">创建</el-button>
       </template>
     </el-dialog>
   </div>
@@ -128,22 +141,6 @@ onMounted(load)
 
 <style scoped lang="scss">
 .plans {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-.head-card {
-  padding: 18px 22px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  .sub {
-    margin: 6px 0 0;
-    color: var(--text-secondary);
-    font-size: 13px;
-  }
-}
-.page-card {
-  padding: 16px 18px;
+  gap: 16px;
 }
 </style>

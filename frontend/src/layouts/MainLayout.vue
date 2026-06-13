@@ -1,10 +1,15 @@
 <template>
-  <div class="layout" :class="{ collapsed }">
-    <!-- Sidebar -->
-    <aside class="sidebar">
+  <div class="layout" :class="{ collapsed, 'sidebar-animating': sidebarAnimating }">
+    <aside
+      ref="sidebarRef"
+      class="sidebar glass-panel"
+      :class="{ collapsed, 'is-animating': sidebarAnimating }"
+      @transitionend="onSidebarTransitionEnd"
+    >
+      <div class="sidebar-inner">
       <div class="sidebar-logo brand-logo">
-        <div class="logo-mark">A</div>
-        <div class="logo-text" v-show="!collapsed">
+        <img src="/logo.png?v=2" alt="AutoTest Pro" class="logo-mark" />
+        <div class="logo-text sidebar-label" :class="{ 'sidebar-label--hide': collapsed }">
           <div class="logo-title">AutoTest <span class="pro">Pro</span></div>
           <div class="logo-sub">自动化测试平台</div>
         </div>
@@ -14,6 +19,7 @@
         :default-active="activeMenu"
         class="side-menu"
         :collapse="collapsed"
+        :collapse-transition="false"
         router
         background-color="transparent"
       >
@@ -27,26 +33,25 @@
         </el-menu-item>
       </el-menu>
 
-      <div class="sidebar-foot" @click="collapsed = !collapsed">
+      <div class="sidebar-foot" @click="toggleSidebar">
         <el-icon><component :is="collapsed ? 'Expand' : 'Fold'" /></el-icon>
-        <span v-show="!collapsed">收起菜单</span>
+        <span class="sidebar-foot-text sidebar-label" :class="{ 'sidebar-label--hide': collapsed }">
+          收起菜单
+        </span>
+      </div>
       </div>
     </aside>
 
-    <!-- Main -->
     <div class="main">
-      <header class="topbar">
+      <header class="topbar glass-panel">
         <div class="topbar-left">
-          <div class="selector">
-            <span class="sel-label">当前项目</span>
-            <el-select v-model="currentProject" size="default" style="width: 150px">
-              <el-option label="电商平台项目" value="电商平台项目" />
-              <el-option label="支付中台项目" value="支付中台项目" />
-            </el-select>
-          </div>
-          <div class="selector">
-            <span class="sel-label">环境</span>
-            <el-select v-model="currentEnv" size="default" style="width: 130px">
+          <el-select v-model="currentProject" class="pill-select" style="width: 160px">
+            <el-option label="电商平台项目" value="电商平台项目" />
+            <el-option label="支付中台项目" value="支付中台项目" />
+          </el-select>
+          <div class="env-pill">
+            <span class="env-dot" />
+            <el-select v-model="currentEnv" class="pill-select env-select" style="width: 120px">
               <el-option label="测试环境" value="测试环境" />
               <el-option label="预发环境" value="预发环境" />
               <el-option label="生产环境" value="生产环境" />
@@ -55,18 +60,9 @@
         </div>
 
         <div class="topbar-right">
-          <el-input
-            v-model="search"
-            placeholder="全局搜索"
-            :prefix-icon="Search"
-            class="global-search"
-            @keyup.enter="onSearch"
-          >
-            <template #suffix><span class="kbd">Ctrl + K</span></template>
-          </el-input>
           <el-dropdown trigger="click">
             <el-badge :value="3" class="badge-icon">
-              <el-icon :size="20"><Bell /></el-icon>
+              <div class="icon-btn"><el-icon :size="17"><Bell /></el-icon></div>
             </el-badge>
             <template #dropdown>
               <el-dropdown-menu>
@@ -74,14 +70,14 @@
               </el-dropdown-menu>
             </template>
           </el-dropdown>
-          <el-icon :size="20" class="help-icon" @click="onHelp"><QuestionFilled /></el-icon>
+          <div class="icon-btn" @click="onHelp">
+            <el-icon :size="17"><QuestionFilled /></el-icon>
+          </div>
           <el-dropdown @command="onUserCommand">
             <div class="user-chip">
-              <el-avatar :size="30" class="user-avatar">{{
-                userInitial
-              }}</el-avatar>
+              <el-avatar :size="28" :src="avatarUrl" class="user-avatar">{{ userInitial }}</el-avatar>
               <span class="user-name">{{ user?.username || 'Admin' }}</span>
-              <el-icon><ArrowDown /></el-icon>
+              <el-icon :size="12"><ArrowDown /></el-icon>
             </div>
             <template #dropdown>
               <el-dropdown-menu>
@@ -94,29 +90,38 @@
       </header>
 
       <main class="content">
-        <router-view />
+        <div class="content-glass">
+          <router-view />
+        </div>
       </main>
     </div>
+
+    <HelpDocDialog v-model="helpVisible" />
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
-import { Search, Bell, QuestionFilled, ArrowDown } from '@element-plus/icons-vue'
+import { Bell, QuestionFilled, ArrowDown } from '@element-plus/icons-vue'
 import { useUserStore } from '@/store/user'
+import HelpDocDialog from '@/components/HelpDocDialog.vue'
+
+const SIDEBAR_DURATION_MS = 380
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
 
+const sidebarRef = ref(null)
 const collapsed = ref(false)
-const search = ref('')
+const sidebarAnimating = ref(false)
+const helpVisible = ref(false)
 const currentProject = ref('电商平台项目')
 const currentEnv = ref('测试环境')
 
 const user = computed(() => userStore.user)
+const avatarUrl = computed(() => userStore.avatarUrl)
 const userInitial = computed(() =>
   (user.value?.username || 'A').charAt(0).toUpperCase()
 )
@@ -128,14 +133,44 @@ const notifications = [
   '有 3 个用例待评审',
 ]
 
-const onSearch = () => {
-  if (search.value.trim()) {
-    ElMessage.info(`正在搜索：${search.value}`)
-  }
-}
 const onHelp = () => {
-  ElMessage.info('帮助文档建设中，可查看项目 README')
+  helpVisible.value = true
 }
+
+const toggleSidebar = () => {
+  if (sidebarAnimating.value) return
+
+  sidebarAnimating.value = true
+  clearTimeout(sidebarAnimTimer)
+  collapsed.value = !collapsed.value
+  sidebarAnimTimer = setTimeout(finishSidebarAnim, SIDEBAR_DURATION_MS + 80)
+}
+
+const finishSidebarAnim = () => {
+  clearTimeout(blurRestoreTimer)
+  blurRestoreTimer = setTimeout(() => {
+    sidebarAnimating.value = false
+  }, 120)
+}
+
+const onSidebarTransitionEnd = (event) => {
+  if (event.target !== sidebarRef.value || event.propertyName !== 'width') return
+  clearTimeout(sidebarAnimTimer)
+  finishSidebarAnim()
+}
+
+let sidebarAnimTimer = null
+let blurRestoreTimer = null
+
+watch(sidebarAnimating, (active) => {
+  document.body.classList.toggle('sidebar-animating', active)
+})
+
+onUnmounted(() => {
+  clearTimeout(sidebarAnimTimer)
+  clearTimeout(blurRestoreTimer)
+  document.body.classList.remove('sidebar-animating')
+})
 
 const menuItems = [
   { path: '/dashboard', title: '首页', icon: 'HomeFilled' },
@@ -149,10 +184,13 @@ const menuItems = [
   { path: '/environments', title: '环境配置', icon: 'Setting' },
   { path: '/data', title: '数据管理', icon: 'Coin' },
   { path: '/system', title: '系统管理', icon: 'Tools' },
+  { path: '/profile', title: '个人中心', icon: 'UserFilled' },
 ]
 
 const onUserCommand = (cmd) => {
-  if (cmd === 'logout') {
+  if (cmd === 'profile') {
+    router.push('/profile')
+  } else if (cmd === 'logout') {
     userStore.logout()
     router.push('/login')
   }
@@ -160,56 +198,301 @@ const onUserCommand = (cmd) => {
 </script>
 
 <style scoped lang="scss">
+$sidebar-ease: cubic-bezier(0.4, 0, 0.2, 1);
+$sidebar-duration: 0.38s;
+
 .layout {
   display: flex;
   height: 100vh;
   overflow: hidden;
+  padding: 14px;
+  gap: 14px;
+}
+
+.glass-panel {
+  position: relative;
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(36px) saturate(200%);
+  -webkit-backdrop-filter: blur(36px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.82);
+  box-shadow: var(--glass-shadow);
+  transition:
+    background 0.32s ease,
+    backdrop-filter 0.32s ease,
+    -webkit-backdrop-filter 0.32s ease;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.95) 0%,
+      rgba(255, 255, 255, 0.3) 50%,
+      rgba(255, 255, 255, 0.7) 100%
+    );
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
 }
 
 .sidebar {
   width: 220px;
-  background: #fff;
-  border-right: 1px solid var(--border-light);
+  border-radius: var(--glass-radius-xl);
+  flex-shrink: 0;
+  overflow: hidden;
+  transition: width $sidebar-duration $sidebar-ease;
+
+  &.collapsed {
+    width: 72px;
+
+    .sidebar-inner {
+      width: 72px;
+      min-width: 72px;
+    }
+
+    .sidebar-logo {
+      justify-content: center;
+      padding: 0;
+      width: 100%;
+    }
+
+    .sidebar-foot {
+      justify-content: center;
+      padding: 0;
+      gap: 0;
+      width: 100%;
+    }
+
+    .side-menu {
+      padding: 10px 6px;
+      width: 100%;
+
+      :deep(.el-menu--collapse) {
+        width: 100%;
+      }
+
+      :deep(.el-menu-item) {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 0 !important;
+        margin-left: 0;
+        margin-right: 0;
+
+        .el-icon {
+          margin: 0 !important;
+          position: relative;
+          z-index: 1;
+        }
+
+        .el-menu-tooltip__trigger {
+          position: absolute;
+          inset: 0;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          padding: 0 !important;
+        }
+
+        &:hover:not(.is-active),
+        &.is-active:hover {
+          transform: none;
+        }
+      }
+    }
+  }
+
+  &.is-animating.glass-panel {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+}
+
+.sidebar-inner {
+  width: 220px;
+  min-width: 220px;
+  height: 100%;
   display: flex;
   flex-direction: column;
-  transition: width 0.25s;
-  flex-shrink: 0;
+  transition: width $sidebar-duration $sidebar-ease, min-width $sidebar-duration $sidebar-ease;
+}
 
-  .layout.collapsed & {
-    width: 72px;
+.sidebar-label {
+  overflow: hidden;
+  white-space: nowrap;
+  flex-shrink: 0;
+  max-width: 160px;
+  opacity: 1;
+  transition:
+    opacity 0.22s ease,
+    max-width $sidebar-duration $sidebar-ease;
+
+  &--hide {
+    opacity: 0;
+    max-width: 0;
+    pointer-events: none;
   }
 }
 
 .sidebar-logo {
   height: 64px;
   padding: 0 18px;
-  border-bottom: 1px solid var(--border-light);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.5);
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  transition: padding $sidebar-duration $sidebar-ease;
+}
+
+.logo-text {
+  margin-left: 0;
 }
 
 .side-menu {
   flex: 1;
   border-right: none;
-  padding: 10px;
+  padding: 10px 8px;
   overflow-y: auto;
+  --el-menu-hover-bg-color: transparent;
+  --el-menu-bg-color: transparent;
+  --el-menu-active-color: var(--menu-active-color);
 
   :deep(.el-menu-item) {
-    height: 46px;
-    border-radius: 9px;
-    margin-bottom: 4px;
+    position: relative;
+    overflow: hidden;
+    height: 42px;
+    border-radius: var(--glass-radius-sm);
+    margin-bottom: 2px;
     color: var(--text-regular);
-    font-size: 14px;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    border: 1px solid transparent;
+    background: transparent !important;
+    transition:
+      background 0.28s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+      border-color 0.28s ease,
+      box-shadow 0.28s ease,
+      color 0.28s ease,
+      transform 0.28s ease;
 
-    &:hover {
-      background: #f2f5ff;
+    .el-icon {
+      font-size: 17px;
+      transition: color 0.28s ease, filter 0.28s ease;
+    }
+
+    // 玻璃折射高光（hover 时显现，非纯白铺底）
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      padding: 1px;
+      background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.72) 0%,
+        rgba(255, 255, 255, 0.12) 48%,
+        rgba(255, 255, 255, 0.38) 100%
+      );
+      -webkit-mask:
+        linear-gradient(#fff 0 0) content-box,
+        linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      opacity: 0;
+      transition: opacity 0.28s ease;
+      pointer-events: none;
+    }
+
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: linear-gradient(
+        125deg,
+        rgba(255, 255, 255, 0.28) 0%,
+        rgba(255, 255, 255, 0.04) 42%,
+        transparent 68%
+      );
+      opacity: 0;
+      transition: opacity 0.28s ease;
+      pointer-events: none;
+    }
+
+    &:hover:not(.is-active) {
+      background: rgba(255, 255, 255, 0.28) !important;
+      backdrop-filter: blur(22px) saturate(195%);
+      -webkit-backdrop-filter: blur(22px) saturate(195%);
+      border-color: rgba(255, 255, 255, 0.52);
       color: var(--brand-primary);
+      box-shadow:
+        0 4px 18px rgba(0, 122, 255, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.48),
+        inset 0 -1px 0 rgba(255, 255, 255, 0.12);
+      transform: translateX(2px);
+
+      &::before {
+        opacity: 0.75;
+      }
+
+      &::after {
+        opacity: 0.85;
+      }
+
+      .el-icon {
+        filter: drop-shadow(0 0 4px rgba(0, 122, 255, 0.25));
+      }
     }
 
     &.is-active {
-      background: var(--brand-primary);
-      color: #fff;
+      background: rgba(0, 122, 255, 0.16) !important;
+      backdrop-filter: blur(24px) saturate(200%);
+      -webkit-backdrop-filter: blur(24px) saturate(200%);
+      color: var(--menu-active-color);
       font-weight: 600;
-      box-shadow: 0 6px 14px rgba(47, 107, 255, 0.3);
+      border-color: rgba(0, 122, 255, 0.22);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.75),
+        0 4px 16px rgba(0, 122, 255, 0.12);
+
+      .el-icon {
+        color: var(--brand-primary);
+      }
+
+      &::before {
+        opacity: 0.55;
+        background: linear-gradient(
+          135deg,
+          rgba(255, 255, 255, 0.65) 0%,
+          rgba(0, 122, 255, 0.08) 50%,
+          rgba(255, 255, 255, 0.35) 100%
+        );
+      }
+    }
+
+    &.is-active:hover {
+      background: rgba(0, 122, 255, 0.22) !important;
+      border-color: rgba(0, 122, 255, 0.3);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.65),
+        0 6px 20px rgba(0, 122, 255, 0.14);
+      transform: translateX(2px);
+
+      &::before {
+        opacity: 0.85;
+      }
+
+      &::after {
+        opacity: 0.6;
+      }
     }
   }
 }
@@ -219,14 +502,31 @@ const onUserCommand = (cmd) => {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 0 22px;
-  border-top: 1px solid var(--border-light);
+  padding: 0 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.5);
   color: var(--text-secondary);
   cursor: pointer;
-  font-size: 13px;
+  font-size: 12px;
   flex-shrink: 0;
+  border-radius: 0 0 var(--glass-radius-xl) var(--glass-radius-xl);
+  transition:
+    color 0.25s ease,
+    background 0.25s ease,
+    padding $sidebar-duration $sidebar-ease,
+    gap $sidebar-duration $sidebar-ease;
+  box-sizing: border-box;
+
+  .el-icon {
+    flex-shrink: 0;
+    font-size: 16px;
+  }
+
   &:hover {
     color: var(--brand-primary);
+    background: rgba(255, 255, 255, 0.55);
+    backdrop-filter: blur(20px) saturate(200%);
+    -webkit-backdrop-filter: blur(20px) saturate(200%);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
   }
 }
 
@@ -235,72 +535,162 @@ const onUserCommand = (cmd) => {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  gap: 14px;
+  min-width: 0;
 }
 
 .topbar {
-  height: 64px;
-  background: #fff;
-  border-bottom: 1px solid var(--border-light);
+  height: 56px;
+  border-radius: var(--glass-radius-xl);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 24px;
+  padding: 0 20px;
   flex-shrink: 0;
 }
 
 .topbar-left {
   display: flex;
-  gap: 22px;
-  .selector {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    .sel-label {
-      font-size: 13px;
-      color: var(--text-secondary);
-    }
+  align-items: center;
+  gap: 12px;
+}
+
+.env-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.env-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--success);
+  box-shadow: 0 0 6px rgba(52, 199, 89, 0.6);
+  flex-shrink: 0;
+}
+
+.pill-select {
+  :deep(.el-select__wrapper) {
+    min-height: 34px;
+    font-size: 13px;
+    font-weight: 500;
   }
 }
 
 .topbar-right {
   display: flex;
   align-items: center;
-  gap: 20px;
-  .global-search {
-    width: 240px;
-    .kbd {
-      font-size: 11px;
-      color: #b3b9c7;
-      border: 1px solid var(--border-light);
-      border-radius: 4px;
-      padding: 1px 5px;
-    }
+  gap: 10px;
+}
+
+.icon-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text-regular);
+  background: rgba(255, 255, 255, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  transition:
+    background 0.28s ease,
+    border-color 0.28s ease,
+    box-shadow 0.28s ease,
+    transform 0.28s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    color 0.28s ease,
+    backdrop-filter 0.28s ease;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.82);
+    backdrop-filter: blur(24px) saturate(220%);
+    -webkit-backdrop-filter: blur(24px) saturate(220%);
+    border-color: rgba(255, 255, 255, 0.98);
+    color: var(--brand-primary);
+    box-shadow:
+      0 8px 22px rgba(0, 122, 255, 0.14),
+      inset 0 1px 0 rgba(255, 255, 255, 1);
+    transform: translateY(-2px) scale(1.04);
   }
-  .badge-icon,
-  .help-icon {
-    cursor: pointer;
-    color: var(--text-regular);
+
+  &:active {
+    transform: translateY(0) scale(1);
   }
+}
+
+.badge-icon {
+  cursor: pointer;
 }
 
 .user-chip {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
   cursor: pointer;
+  padding: 3px 12px 3px 3px;
+  border-radius: var(--glass-radius-pill);
+  background: rgba(255, 255, 255, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  transition:
+    background 0.28s ease,
+    border-color 0.28s ease,
+    box-shadow 0.28s ease,
+    transform 0.28s ease,
+    backdrop-filter 0.28s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.82);
+    backdrop-filter: blur(24px) saturate(220%);
+    -webkit-backdrop-filter: blur(24px) saturate(220%);
+    border-color: rgba(255, 255, 255, 0.98);
+    box-shadow:
+      0 8px 22px rgba(0, 122, 255, 0.12),
+      inset 0 1px 0 rgba(255, 255, 255, 1);
+    transform: translateY(-2px);
+  }
+
   .user-avatar {
     background: var(--brand-gradient);
     font-weight: 600;
+    font-size: 12px;
   }
   .user-name {
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
+    letter-spacing: -0.01em;
   }
 }
 
 .content {
   flex: 1;
-  overflow-y: auto;
-  padding: 20px 24px;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.content-glass {
+  height: 100%;
+  border-radius: var(--glass-radius-xl);
+  background: rgba(255, 255, 255, 0.48);
+  backdrop-filter: blur(36px) saturate(200%);
+  -webkit-backdrop-filter: blur(36px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.78);
+  box-shadow: var(--glass-shadow);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition:
+    background 0.32s ease,
+    backdrop-filter 0.32s ease,
+    -webkit-backdrop-filter 0.32s ease;
+
+  > * {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+  }
 }
 </style>

@@ -1,5 +1,8 @@
+from pathlib import Path
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.api import auth, cases, dashboard, plans, projects
 from app.core.config import settings
@@ -10,6 +13,9 @@ app = FastAPI(
     description="AutoTest Pro 自动化测试平台后端 API",
     version="1.0.0",
 )
+
+upload_root = Path(__file__).resolve().parent.parent / "uploads"
+(upload_root / "avatars").mkdir(parents=True, exist_ok=True)
 
 app.add_middleware(
     CORSMiddleware,
@@ -31,6 +37,7 @@ def root():
 
 
 api_prefix = settings.API_V1_PREFIX
+app.mount(f"{api_prefix}/static", StaticFiles(directory=str(upload_root)), name="static")
 app.include_router(auth.router, prefix=api_prefix)
 app.include_router(dashboard.router, prefix=api_prefix)
 app.include_router(projects.router, prefix=api_prefix)

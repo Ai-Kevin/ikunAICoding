@@ -1,7 +1,43 @@
 <template>
-  <div class="api-test" v-loading="loading">
+  <div class="api-test page-shell-fill" v-loading="loading">
+    <div class="page-header">
+      <el-breadcrumb separator="/" class="page-crumb">
+        <el-breadcrumb-item>API 测试</el-breadcrumb-item>
+        <el-breadcrumb-item>接口目录</el-breadcrumb-item>
+        <el-breadcrumb-item>{{ current.name || '请选择用例' }}</el-breadcrumb-item>
+      </el-breadcrumb>
+      <div class="header-main">
+        <div>
+          <div class="page-title-row">
+            <h1>{{ current.name || '请选择用例' }}</h1>
+            <el-tag v-if="current.id" size="small" effect="light">{{ current.method }}</el-tag>
+          </div>
+          <div class="meta-grid" v-if="current.id">
+            <div class="meta-item">
+              <span class="meta-label">请求方法</span>
+              <span class="meta-value">{{ current.method }}</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">环境</span>
+              <span class="meta-value">测试环境</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">模块</span>
+              <span class="meta-value">{{ currentModule }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="header-actions">
+          <el-button type="primary" round :icon="Promotion" :loading="sending" @click="send">发送</el-button>
+          <el-button round :icon="DocumentChecked" :loading="saving" @click="save">保存</el-button>
+          <el-button round :icon="Plus" @click="openCreateCase">新建</el-button>
+        </div>
+      </div>
+    </div>
+
+    <div class="api-body">
     <!-- Left: interface directory -->
-    <div class="page-card tree-panel">
+    <div class="glass-inner tree-panel">
       <div class="tree-head">
         <span class="section-title">接口目录</span>
         <el-icon class="add" @click="openCreateCase"><Plus /></el-icon>
@@ -44,13 +80,9 @@
 
     <!-- Center: request builder -->
     <div class="center-panel">
-      <div class="page-card req-card">
+      <div class="glass-inner req-card">
         <div class="req-tabs">
           <span class="tab active">{{ current.method }} {{ current.name }}</span>
-          <span class="tab-actions">
-            <el-button type="primary" :icon="Promotion" size="small" :loading="sending" @click="send">发送</el-button>
-            <el-button :icon="DocumentChecked" size="small" :loading="saving" @click="save">保存</el-button>
-          </span>
         </div>
 
         <div class="url-bar">
@@ -152,7 +184,7 @@
         </div>
       </div>
 
-      <div class="page-card assert-card">
+      <div class="glass-inner assert-card">
         <div class="card-head">
           <div class="section-title">断言</div>
           <el-button size="small" :icon="Plus" @click="addAssertion">添加断言</el-button>
@@ -199,7 +231,7 @@
     </div>
 
     <!-- Right: response -->
-    <div class="page-card resp-panel">
+    <div class="glass-terminal resp-panel">
       <div class="resp-head">
         <span class="section-title">响应结果</span>
         <div class="resp-meta" v-if="response">
@@ -222,6 +254,7 @@
         <pre v-else-if="respTab === 'headers'">{{ prettyHeaders }}</pre>
         <pre v-else>暂无 Cookies</pre>
       </div>
+    </div>
     </div>
 
     <!-- New / edit case dialog -->
@@ -302,6 +335,11 @@ const current = reactive({
   method: 'POST',
   url: '{{baseUrl}}/api/v1/users/create',
   body: '',
+})
+
+const currentModule = computed(() => {
+  if (!current.id) return '—'
+  return apiCases.value.find((c) => c.id === current.id)?.module || '—'
 })
 
 const params = ref([])
@@ -766,10 +804,17 @@ onMounted(async () => {
 
 <style scoped lang="scss">
 .api-test {
+  gap: 20px;
+  padding: 20px 24px;
+}
+
+.api-body {
+  flex: 1;
   display: grid;
-  grid-template-columns: 260px 1fr 380px;
+  grid-template-columns: 240px 1fr 360px;
   gap: 14px;
-  height: 100%;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .tree-panel {
@@ -781,18 +826,11 @@ onMounted(async () => {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    .add {
-      cursor: pointer;
-      color: var(--brand-primary);
-    }
+    margin-bottom: 4px;
+    .add { cursor: pointer; color: var(--brand-primary); }
   }
-  .tree-search {
-    margin: 12px 0;
-  }
-  .api-tree {
-    flex: 1;
-    overflow-y: auto;
-  }
+  .tree-search { margin: 10px 0; }
+  .api-tree { flex: 1; overflow-y: auto; }
 }
 
 .tree-node {
@@ -852,6 +890,24 @@ onMounted(async () => {
     font-size: 13px;
     color: var(--text-secondary);
     cursor: pointer;
+    padding: 4px 10px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    transition:
+      color 0.25s ease,
+      background 0.25s ease,
+      border-color 0.25s ease,
+      box-shadow 0.25s ease,
+      backdrop-filter 0.25s ease;
+
+    &:hover {
+      color: var(--brand-primary);
+      background: rgba(255, 255, 255, 0.65);
+      backdrop-filter: blur(16px) saturate(200%);
+      border-color: rgba(255, 255, 255, 0.85);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    }
+
     &.active {
       color: var(--brand-primary);
       font-weight: 600;
@@ -887,21 +943,40 @@ onMounted(async () => {
     color: var(--text-regular);
     cursor: pointer;
     position: relative;
-    padding-bottom: 4px;
+    padding: 4px 10px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    transition:
+      color 0.25s ease,
+      background 0.25s ease,
+      border-color 0.25s ease,
+      box-shadow 0.25s ease,
+      backdrop-filter 0.25s ease;
+
     &:hover {
       color: var(--brand-primary);
+      background: rgba(255, 255, 255, 0.65);
+      backdrop-filter: blur(16px) saturate(200%);
+      border-color: rgba(255, 255, 255, 0.85);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
     }
+
     &.active {
       color: var(--brand-primary);
       font-weight: 600;
+      background: rgba(0, 122, 255, 0.08);
+      border-color: rgba(0, 122, 255, 0.15);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+
       &::after {
         content: '';
         position: absolute;
-        left: 0;
-        right: 0;
-        bottom: -13px;
+        left: 10px;
+        right: 10px;
+        bottom: 0;
         height: 2px;
         background: var(--brand-primary);
+        border-radius: 1px;
       }
     }
   }
@@ -913,12 +988,12 @@ onMounted(async () => {
   margin-bottom: 8px;
   .bt-lang {
     font-size: 12px;
-    color: var(--text-secondary);
-    background: #eef2ff;
+    background: rgba(0, 122, 255, 0.12);
     color: var(--brand-primary);
-    padding: 2px 10px;
-    border-radius: 4px;
+    padding: 3px 12px;
+    border-radius: var(--glass-radius-pill);
     font-weight: 600;
+    border: 1px solid rgba(0, 122, 255, 0.15);
   }
   .bt-actions {
     display: flex;
@@ -952,10 +1027,14 @@ onMounted(async () => {
 }
 
 .resp-panel {
-  padding: 14px 16px;
+  padding: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+
+  .section-title {
+    color: rgba(255, 255, 255, 0.9);
+  }
 }
 .resp-head {
   display: flex;
@@ -963,32 +1042,47 @@ onMounted(async () => {
   align-items: center;
   flex-wrap: wrap;
   gap: 8px;
+  padding: 14px 16px 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+
   .resp-meta {
     display: flex;
     align-items: center;
     gap: 10px;
     font-size: 12px;
-    color: var(--text-secondary);
+    color: rgba(255, 255, 255, 0.55);
   }
 }
+
+.resp-tabs {
+  padding: 0 16px;
+
+  :deep(.el-tabs__item) {
+    color: rgba(255, 255, 255, 0.5) !important;
+    &.is-active { color: #60a5fa !important; }
+  }
+  :deep(.el-tabs__nav-wrap::after) {
+    background: rgba(255, 255, 255, 0.08) !important;
+  }
+}
+
 .resp-body {
   flex: 1;
   overflow-y: auto;
-  background: #f7f8fb;
-  border-radius: 8px;
-  padding: 14px;
-  margin-top: 10px;
+  padding: 14px 16px;
+  margin: 0;
+
   pre {
     margin: 0;
-    color: #2b3a4d;
-    font-family: 'Consolas', 'Monaco', monospace;
-    font-size: 13px;
-    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.82);
+    font-family: 'SF Mono', 'Consolas', monospace;
+    font-size: 12.5px;
+    line-height: 1.7;
     white-space: pre-wrap;
     word-break: break-all;
   }
   .placeholder-text {
-    color: var(--text-secondary);
+    color: rgba(255, 255, 255, 0.35);
   }
 }
 </style>

@@ -1,0 +1,99 @@
+// ─── Liquid Glass Hover / Active States ──────────────────────────────────────
+
+@mixin glass-hover-lift {
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(32px) saturate(220%);
+  -webkit-backdrop-filter: blur(32px) saturate(220%);
+  border-color: rgba(255, 255, 255, 0.98);
+  box-shadow:
+    0 10px 32px rgba(0, 122, 255, 0.14),
+    0 4px 14px rgba(255, 255, 255, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.45);
+  transform: translateY(-2px);
+}
+
+@mixin glass-hover-soft {
+  background: rgba(255, 255, 255, 0.68);
+  backdrop-filter: blur(24px) saturate(210%);
+  -webkit-backdrop-filter: blur(24px) saturate(210%);
+  border-color: rgba(255, 255, 255, 0.92);
+  box-shadow:
+    0 6px 20px rgba(0, 122, 255, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.35);
+}
+
+@mixin glass-hover-shine {
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.55) 0%,
+      rgba(255, 255, 255, 0.08) 45%,
+      transparent 60%
+    );
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+  }
+
+  &:hover::after {
+    opacity: 1;
+  }
+}
+
+// Utility: any custom clickable chip / card
+.glass-interactive {
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  transition:
+    background 0.28s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    border-color 0.28s ease,
+    box-shadow 0.28s ease,
+    transform 0.28s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    backdrop-filter 0.28s ease;
+  @include glass-hover-shine;
+
+  &:hover {
+    @include glass-hover-lift;
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow:
+      0 4px 12px rgba(0, 122, 255, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  }
+}
+
+.glass-chip {
+  transition:
+    background 0.28s ease,
+    border-color 0.28s ease,
+    box-shadow 0.28s ease,
+    transform 0.28s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    backdrop-filter 0.28s ease;
+
+  &:hover {
+    @include glass-hover-soft;
+    transform: translateY(-2px);
+    box-shadow:
+      0 8px 24px rgba(0, 122, 255, 0.12),
+      inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  }
+}
+
+.link-more,
+.link-primary {
+  transition: color 0.2s ease, text-shadow 0.2s ease;
+
+  &:hover {
+    color: var(--brand-primary) !important;
+    text-shadow: 0 0 20px rgba(0, 122, 255, 0.25);
+  }
+}

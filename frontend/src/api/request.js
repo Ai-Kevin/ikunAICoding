@@ -23,6 +23,7 @@ request.interceptors.response.use(
     if (status === 401) {
       localStorage.removeItem('token')
       localStorage.removeItem('user')
+      localStorage.removeItem('session_id')
       router.push('/login')
     }
     ElMessage.error(detail)

@@ -78,6 +78,12 @@ const routes = [
         component: () => import('@/views/Placeholder.vue'),
         meta: { title: '系统管理', icon: 'Tools' },
       },
+      {
+        path: 'profile',
+        name: 'Profile',
+        component: () => import('@/views/Profile.vue'),
+        meta: { title: '个人中心', icon: 'User' },
+      },
     ],
   },
   { path: '/:pathMatch(.*)*', redirect: '/dashboard' },

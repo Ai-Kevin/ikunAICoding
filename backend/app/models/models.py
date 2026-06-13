@@ -25,6 +25,26 @@ class User(Base):
     avatar = Column(String(255), default="")
     created_at = Column(DateTime, default=datetime.utcnow)
 
+    login_records = relationship(
+        "LoginRecord", back_populates="user", cascade="all, delete-orphan"
+    )
+
+
+class LoginRecord(Base):
+    __tablename__ = "login_records"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), index=True, nullable=False)
+    session_id = Column(String(64), index=True, nullable=False)
+    device = Column(String(16), default="desktop")
+    title = Column(String(128), default="")
+    ip = Column(String(64), default="")
+    location = Column(String(128), default="")
+    user_agent = Column(String(512), default="")
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+
+    user = relationship("User", back_populates="login_records")
+
 
 class Project(Base):
     __tablename__ = "projects"

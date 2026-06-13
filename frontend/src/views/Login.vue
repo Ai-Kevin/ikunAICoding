@@ -1,13 +1,11 @@
 <template>
   <div class="login-page">
     <!-- Left hero panel -->
-    <div class="login-hero">
+    <div class="login-hero glass-panel">
       <div class="hero-logo brand-logo">
-        <div class="logo-mark">A</div>
+        <img src="/logo.png?v=2" alt="AutoTest Pro" class="logo-mark" />
         <div class="logo-text">
-          <div class="logo-title" style="color: #fff">
-            AutoTest <span style="color: #6ea8ff">Pro</span>
-          </div>
+          <div class="logo-title">AutoTest <span class="pro">Pro</span></div>
           <div class="logo-sub">自动化测试平台</div>
         </div>
       </div>
@@ -20,19 +18,20 @@
         <p class="hero-desc">从用例管理到持续集成，全流程质量保障</p>
 
         <div class="hero-illustration">
-          <div class="infinity">
+          <div class="infinity-ring">
             <svg viewBox="0 0 200 100" width="260" height="130">
               <defs>
                 <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0%" stop-color="#3a7bff" />
-                  <stop offset="100%" stop-color="#7db0ff" />
+                  <stop offset="0%" stop-color="#007AFF" />
+                  <stop offset="50%" stop-color="#5856D6" />
+                  <stop offset="100%" stop-color="#AF52DE" />
                 </linearGradient>
               </defs>
               <path
                 d="M50 50 C50 25 90 25 100 50 C110 75 150 75 150 50 C150 25 110 25 100 50 C90 75 50 75 50 50 Z"
                 fill="none"
                 stroke="url(#g1)"
-                stroke-width="14"
+                stroke-width="12"
                 stroke-linecap="round"
               />
             </svg>
@@ -40,8 +39,8 @@
         </div>
 
         <div class="hero-features">
-          <div class="feature" v-for="f in features" :key="f.title">
-            <el-icon :size="22"><component :is="f.icon" /></el-icon>
+          <div class="feature glass-chip" v-for="f in features" :key="f.title">
+            <el-icon :size="20"><component :is="f.icon" /></el-icon>
             <div class="f-title">{{ f.title }}</div>
             <div class="f-sub">{{ f.sub }}</div>
           </div>
@@ -51,7 +50,7 @@
 
     <!-- Right form panel -->
     <div class="login-form-wrap">
-      <div class="login-card">
+      <div class="login-card glass-panel-strong">
         <h2>欢迎登录</h2>
         <p class="card-sub">登录您的账号以继续使用 AutoTest Pro</p>
 
@@ -82,11 +81,12 @@
 
           <div class="form-row">
             <el-checkbox v-model="form.remember">记住我</el-checkbox>
-            <a class="link">忘记密码？</a>
+            <a class="link-primary">忘记密码？</a>
           </div>
 
           <el-button
             type="primary"
+            round
             class="login-btn"
             :loading="loading"
             @click="onSubmit"
@@ -98,22 +98,17 @@
         <div class="divider"><span>其他登录方式</span></div>
 
         <div class="social-login">
-          <div class="social-btn">
-            <el-icon color="#07c160"><ChatDotRound /></el-icon> 企业微信
-          </div>
-          <div class="social-btn">
-            <el-icon color="#fc6d26"><Platform /></el-icon> GitLab
-          </div>
-          <div class="social-btn">
-            <el-icon color="#00a4ef"><Grid /></el-icon> LDAP / AD
+          <div class="social-btn glass-chip" v-for="s in socials" :key="s.label">
+            <el-icon :color="s.color"><component :is="s.icon" /></el-icon>
+            <span>{{ s.label }}</span>
           </div>
         </div>
 
         <div class="register-tip">
-          还没有账号？<a class="link">立即注册</a>
+          还没有账号？<a class="link-primary">立即注册</a>
         </div>
 
-        <div class="demo-tip">演示账号：admin / admin123</div>
+        <div class="demo-tip glass-chip">演示账号：admin / admin123</div>
       </div>
 
       <div class="copyright">
@@ -163,6 +158,12 @@ const features = [
   { icon: LockIcon, title: '稳定可靠', sub: '企业级安全保障' },
 ]
 
+const socials = [
+  { icon: ChatDotRound, label: '企业微信', color: '#07c160' },
+  { icon: Platform, label: 'GitLab', color: '#fc6d26' },
+  { icon: Grid, label: 'LDAP / AD', color: '#007AFF' },
+]
+
 const onSubmit = async () => {
   await formRef.value.validate(async (valid) => {
     if (!valid) return
@@ -188,19 +189,61 @@ const onSubmit = async () => {
   display: flex;
   height: 100vh;
   width: 100%;
+  padding: 20px;
+  gap: 20px;
+  align-items: stretch;
+}
+
+.glass-panel,
+.glass-panel-strong {
+  position: relative;
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(36px) saturate(200%);
+  -webkit-backdrop-filter: blur(36px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.82);
+  box-shadow: var(--glass-shadow-lg);
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.95) 0%,
+      rgba(255, 255, 255, 0.3) 50%,
+      rgba(255, 255, 255, 0.7) 100%
+    );
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+}
+
+.glass-panel-strong {
+  background: rgba(255, 255, 255, 0.62);
+  backdrop-filter: blur(40px) saturate(200%);
+  -webkit-backdrop-filter: blur(40px) saturate(200%);
+}
+
+.glass-chip {
+  background: rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: var(--glass-radius-sm);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
 }
 
 .login-hero {
-  flex: 1.15;
-  position: relative;
-  background: radial-gradient(
-      circle at 70% 20%,
-      #1b3a8c 0%,
-      transparent 55%
-    ),
-    linear-gradient(135deg, #0a1d4a 0%, #0d265e 55%, #0a1c45 100%);
-  color: #fff;
-  padding: 48px 64px;
+  flex: 1.2;
+  border-radius: var(--glass-radius-xl);
+  color: var(--text-main);
+  padding: 48px 56px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -211,75 +254,120 @@ const onSubmit = async () => {
 }
 
 .hero-content {
-  margin-top: 24px;
+  margin-top: 16px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+
   h1 {
-    font-size: 40px;
-    line-height: 1.3;
-    font-weight: 800;
-    margin: 0 0 18px;
+    font-size: 38px;
+    line-height: 1.25;
+    font-weight: 700;
+    margin: 0 0 16px;
+    letter-spacing: -0.03em;
+
     .highlight {
-      background: linear-gradient(90deg, #4f8bff, #8fb6ff);
+      background: linear-gradient(90deg, #007aff, #5856d6, #af52de);
       -webkit-background-clip: text;
       background-clip: text;
       color: transparent;
     }
   }
+
   .hero-desc {
-    font-size: 16px;
-    color: #aebfe0;
+    font-size: 15px;
+    color: var(--text-secondary);
     margin: 0;
   }
 }
 
 .hero-illustration {
-  margin: 30px 0 50px;
+  margin: 36px 0 40px;
   display: flex;
   justify-content: center;
-  .infinity {
-    filter: drop-shadow(0 18px 40px rgba(58, 123, 255, 0.45));
+
+  .infinity-ring {
+    filter: drop-shadow(0 12px 32px rgba(0, 122, 255, 0.25));
+    animation: ring-pulse 4s ease-in-out infinite;
+  }
+}
+
+@keyframes ring-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.03);
+    opacity: 0.9;
   }
 }
 
 .hero-features {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 18px;
+  gap: 14px;
   margin-top: auto;
+
   .feature {
+    padding: 16px 14px;
+    cursor: default;
+    transition:
+      background 0.28s ease,
+      border-color 0.28s ease,
+      box-shadow 0.28s ease,
+      transform 0.28s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+      backdrop-filter 0.28s ease;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.68);
+      backdrop-filter: blur(24px) saturate(210%);
+      -webkit-backdrop-filter: blur(24px) saturate(210%);
+      border-color: rgba(255, 255, 255, 0.92);
+      transform: translateY(-2px);
+      box-shadow:
+        0 8px 24px rgba(0, 122, 255, 0.12),
+        inset 0 1px 0 rgba(255, 255, 255, 0.95);
+    }
+
     .el-icon {
-      color: #5d92ff;
+      color: var(--brand-primary);
       margin-bottom: 8px;
     }
     .f-title {
-      font-size: 14px;
-      font-weight: 700;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
     }
     .f-sub {
-      font-size: 12px;
-      color: #93a4c8;
-      margin-top: 2px;
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-top: 3px;
     }
   }
 }
 
 .login-form-wrap {
   flex: 1;
-  background: #fff;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 40px;
   position: relative;
 }
 
 .login-card {
   width: 100%;
-  max-width: 380px;
+  max-width: 400px;
+  padding: 36px 32px;
+  border-radius: var(--glass-radius-xl);
+
   h2 {
-    font-size: 26px;
-    font-weight: 800;
+    font-size: 28px;
+    font-weight: 700;
     margin: 0 0 8px;
+    letter-spacing: -0.03em;
   }
   .card-sub {
     color: var(--text-secondary);
@@ -295,18 +383,11 @@ const onSubmit = async () => {
   margin-bottom: 22px;
 }
 
-.link {
-  color: var(--brand-primary);
-  cursor: pointer;
-  font-size: 14px;
-}
-
 .login-btn {
   width: 100%;
-  height: 46px;
+  height: 48px;
   font-size: 16px;
   font-weight: 600;
-  border-radius: 8px;
 }
 
 .divider {
@@ -314,7 +395,9 @@ const onSubmit = async () => {
   position: relative;
   margin: 26px 0 20px;
   color: var(--text-secondary);
-  font-size: 13px;
+  font-size: 12px;
+  font-weight: 500;
+
   &::before,
   &::after {
     content: '';
@@ -322,7 +405,7 @@ const onSubmit = async () => {
     top: 50%;
     width: 32%;
     height: 1px;
-    background: var(--border-light);
+    background: rgba(255, 255, 255, 0.55);
   }
   &::before {
     left: 0;
@@ -335,23 +418,62 @@ const onSubmit = async () => {
 .social-login {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+  gap: 10px;
+
   .social-btn {
-    border: 1px solid var(--border-light);
-    border-radius: 8px;
-    height: 50px;
+    position: relative;
+    overflow: hidden;
+    height: 64px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 2px;
-    font-size: 12px;
+    gap: 4px;
+    font-size: 11px;
     color: var(--text-regular);
     cursor: pointer;
-    transition: all 0.2s;
+    border: 1px solid transparent;
+    transition:
+      background 0.28s ease,
+      border-color 0.28s ease,
+      box-shadow 0.28s ease,
+      transform 0.28s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+      backdrop-filter 0.28s ease,
+      color 0.28s ease;
+
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.5) 0%,
+        transparent 60%
+      );
+      opacity: 0;
+      transition: opacity 0.28s ease;
+      pointer-events: none;
+    }
+
     &:hover {
-      border-color: var(--brand-primary);
+      background: rgba(255, 255, 255, 0.78);
+      backdrop-filter: blur(24px) saturate(220%);
+      -webkit-backdrop-filter: blur(24px) saturate(220%);
+      border-color: rgba(255, 255, 255, 0.92);
       color: var(--brand-primary);
+      transform: translateY(-3px);
+      box-shadow:
+        0 10px 28px rgba(0, 122, 255, 0.14),
+        inset 0 1px 0 rgba(255, 255, 255, 1);
+
+      &::after {
+        opacity: 1;
+      }
+    }
+
+    &:active {
+      transform: translateY(-1px);
     }
   }
 }
@@ -367,22 +489,23 @@ const onSubmit = async () => {
   text-align: center;
   margin-top: 14px;
   font-size: 12px;
-  color: #b3b9c7;
-  background: #f7f8fb;
-  padding: 8px;
-  border-radius: 6px;
+  color: var(--text-secondary);
+  padding: 10px 14px;
 }
 
 .copyright {
   position: absolute;
-  bottom: 24px;
-  font-size: 12px;
-  color: #b3b9c7;
+  bottom: 8px;
+  font-size: 11px;
+  color: var(--text-tertiary);
 }
 
 @media (max-width: 900px) {
   .login-hero {
     display: none;
+  }
+  .login-page {
+    justify-content: center;
   }
 }
 </style>

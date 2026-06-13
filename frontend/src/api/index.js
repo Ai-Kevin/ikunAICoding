@@ -3,6 +3,12 @@ import request from './request'
 export const authApi = {
   login: (data) => request.post('/auth/login', data),
   me: () => request.get('/auth/me'),
+  uploadAvatar: (file) => {
+    const form = new FormData()
+    form.append('file', file)
+    return request.post('/auth/avatar', form)
+  },
+  loginRecords: (params) => request.get('/auth/login-records', { params }),
 }
 
 export const dashboardApi = {

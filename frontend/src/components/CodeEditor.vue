@@ -92,9 +92,12 @@ const onTab = (e) => {
 <style scoped lang="scss">
 .code-editor {
   display: flex;
-  background: #ffffff;
-  border: 1px solid var(--border-light);
-  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.42);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: var(--glass-radius-sm);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
   overflow: hidden;
   height: 240px;
   font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
@@ -106,8 +109,8 @@ const onTab = (e) => {
   padding: 12px 8px 12px 12px;
   text-align: right;
   color: #b3b9c7;
-  background: #f7f8fb;
-  border-right: 1px solid var(--border-light);
+  background: rgba(255, 255, 255, 0.25);
+  border-right: 1px solid rgba(255, 255, 255, 0.45);
   overflow: hidden;
   user-select: none;
   min-width: 44px;

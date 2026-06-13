@@ -29,6 +29,25 @@ class UserOut(BaseModel):
 class LoginResponse(BaseModel):
     token: str
     user: UserOut
+    session_id: str
+
+
+class LoginRecordOut(BaseModel):
+    id: int
+    device: str
+    title: str
+    time: datetime
+    location: str
+    ip: str
+    current: bool = False
+
+    class Config:
+        from_attributes = True
+
+
+class LoginRecordListOut(BaseModel):
+    items: list[LoginRecordOut]
+    total: int
 
 
 # ---------- Module ----------

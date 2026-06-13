@@ -1,13 +1,13 @@
 <template>
-  <div class="projects" v-loading="loading">
-    <el-breadcrumb separator="/" class="crumb">
+  <div class="page-shell projects" v-loading="loading">
+    <el-breadcrumb separator="/" class="page-crumb">
       <el-breadcrumb-item>项目管理</el-breadcrumb-item>
       <el-breadcrumb-item>项目列表</el-breadcrumb-item>
       <el-breadcrumb-item>{{ project.name }}</el-breadcrumb-item>
     </el-breadcrumb>
 
     <!-- Project header -->
-    <div class="page-card project-head">
+    <div class="glass-inner project-head">
       <div class="ph-left">
         <div class="ph-logo"><el-icon :size="30"><ShoppingBag /></el-icon></div>
         <div>
@@ -41,8 +41,8 @@
 
     <!-- ============ Overview / Modules tab ============ -->
     <template v-if="activeTab === 'overview' || activeTab === 'modules'">
-      <div class="stat-grid" v-if="activeTab === 'overview'">
-        <div class="stat-card" v-for="(s, i) in projectStats" :key="s.label">
+      <div class="glass-stat-grid" v-if="activeTab === 'overview'">
+        <div class="glass-stat" v-for="(s, i) in projectStats" :key="s.label">
           <div class="stat-icon" :style="{ background: iconBg[i] }">
             <el-icon :size="20"><component :is="s.icon" /></el-icon>
           </div>
@@ -60,7 +60,7 @@
       </div>
 
       <div class="bottom-row">
-        <div class="page-card module-card">
+        <div class="glass-inner panel-pad module-card">
           <div class="card-head">
             <div class="section-title">模块列表</div>
             <el-button type="primary" :icon="Plus" size="small" @click="openCreateModule">新建模块</el-button>
@@ -116,7 +116,7 @@
           </div>
         </div>
 
-        <div class="page-card info-card">
+        <div class="glass-inner panel-pad info-card">
           <div class="section-title">项目信息</div>
           <div class="info-list">
             <div class="info-item"><span>项目ID：</span>{{ project.code }}</div>
@@ -151,7 +151,7 @@
     </template>
 
     <!-- ============ Members tab ============ -->
-    <div v-else-if="activeTab === 'members'" class="page-card tab-panel">
+    <div v-else-if="activeTab === 'members'" class="glass-inner panel-pad tab-panel">
       <div class="card-head">
         <div class="section-title">成员权限</div>
         <el-button type="primary" :icon="Plus" size="small" @click="openMembers">管理成员</el-button>
@@ -174,7 +174,7 @@
     </div>
 
     <!-- ============ Other tabs placeholder ============ -->
-    <div v-else class="page-card tab-panel empty-tab">
+    <div v-else class="glass-inner panel-pad tab-panel empty-tab">
       <el-icon :size="44" color="#c5cbd8"><component :is="tabIcon" /></el-icon>
       <p>「{{ currentTabLabel }}」内容演示，可在此扩展。</p>
     </div>
@@ -280,7 +280,7 @@ const members = ref([])
 const currentPage = ref(1)
 const pageSize = 20
 
-const iconBg = ['#eaf0ff', '#e7f8ee', '#f2ecff', '#fff3e6', '#e6f7f6', '#ffeaea']
+const iconBg = ['rgba(0,122,255,0.1)', 'rgba(52,199,89,0.1)', 'rgba(88,86,214,0.1)', 'rgba(255,149,0,0.1)', 'rgba(0,122,255,0.08)', 'rgba(255,59,48,0.08)']
 
 const tabLabels = {
   env: '关联环境',
@@ -486,12 +486,7 @@ onMounted(load)
 
 <style scoped lang="scss">
 .projects {
-  display: flex;
-  flex-direction: column;
   gap: 14px;
-}
-.crumb {
-  font-size: 13px;
 }
 
 .project-head {
@@ -504,8 +499,8 @@ onMounted(load)
     gap: 16px;
   }
   .ph-logo {
-    width: 60px;
-    height: 60px;
+    width: 56px;
+    height: 56px;
     border-radius: 14px;
     background: var(--brand-gradient);
     color: #fff;
@@ -513,13 +508,15 @@ onMounted(load)
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    box-shadow: 0 4px 14px rgba(0, 122, 255, 0.25);
   }
   .ph-title {
-    font-size: 20px;
-    font-weight: 800;
+    font-size: 18px;
+    font-weight: 700;
     display: flex;
     align-items: center;
     gap: 10px;
+    letter-spacing: -0.02em;
   }
   .ph-meta {
     font-size: 13px;
@@ -533,58 +530,14 @@ onMounted(load)
   }
   .ph-actions {
     display: flex;
-    gap: 10px;
+    gap: 8px;
   }
 }
 
 .proj-tabs {
-  margin: -6px 0 0;
+  margin: -4px 0 0;
   :deep(.el-tabs__header) {
     margin-bottom: 0;
-  }
-}
-
-.stat-grid {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 14px;
-}
-.stat-card {
-  background: #fff;
-  border: 1px solid var(--border-light);
-  border-radius: 12px;
-  padding: 14px;
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  .stat-icon {
-    width: 42px;
-    height: 42px;
-    border-radius: 11px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--brand-primary);
-    flex-shrink: 0;
-  }
-  .stat-label {
-    font-size: 12px;
-    color: var(--text-secondary);
-  }
-  .stat-value {
-    font-size: 20px;
-    font-weight: 800;
-    margin: 2px 0;
-  }
-  .stat-trend {
-    font-size: 11px;
-    color: var(--text-secondary);
-    .up {
-      color: var(--success);
-    }
-    .down {
-      color: var(--danger);
-    }
   }
 }
 
@@ -593,21 +546,19 @@ onMounted(load)
   grid-template-columns: 1fr 320px;
   gap: 16px;
 }
-.module-card,
-.info-card,
-.tab-panel {
-  padding: 16px 18px;
-}
+
 .card-head {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 14px;
 }
+
 .rate {
   color: var(--success);
   font-weight: 600;
 }
+
 .table-foot {
   display: flex;
   justify-content: space-between;
@@ -661,19 +612,13 @@ onMounted(load)
     }
     .dot {
       display: inline-block;
-      width: 8px;
-      height: 8px;
+      width: 7px;
+      height: 7px;
       border-radius: 50%;
       margin-right: 8px;
-      &.green {
-        background: var(--success);
-      }
-      &.blue {
-        background: var(--brand-primary);
-      }
-      &.gray {
-        background: #c5cbd8;
-      }
+      &.green { background: var(--success); box-shadow: 0 0 6px rgba(52, 199, 89, 0.5); }
+      &.blue { background: var(--brand-primary); }
+      &.gray { background: #94a3b8; }
     }
   }
 }
@@ -684,10 +629,8 @@ onMounted(load)
     justify-content: space-between;
     align-items: center;
     padding: 9px 0;
-    border-bottom: 1px solid var(--border-light);
-    &:last-child {
-      border-bottom: none;
-    }
+    border-bottom: 1px solid rgba(255, 255, 255, 0.4);
+    &:last-child { border-bottom: none; }
     .r-name {
       font-size: 13px;
       color: var(--brand-primary);

@@ -39,6 +39,6 @@ onBeforeUnmount(() => {
 .base-chart {
   width: 100%;
   height: 100%;
-  min-height: 220px;
+  min-height: 0;
 }
 </style>

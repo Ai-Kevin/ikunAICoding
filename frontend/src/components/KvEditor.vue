@@ -102,11 +102,12 @@ const remove = (i) => rows.value.splice(i, 1)
   }
 }
 .kv-head {
-  background: #f7f8fb;
+  background: rgba(255, 255, 255, 0.3);
   font-size: 12px;
   color: var(--text-secondary);
   padding-top: 9px;
   padding-bottom: 9px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.4);
 }
 .kv-cell {
   display: flex;
@@ -148,9 +149,10 @@ const remove = (i) => rows.value.splice(i, 1)
   font-size: 13px;
   color: var(--brand-primary);
   cursor: pointer;
-  background: #fff;
+  background: rgba(255, 255, 255, 0.35);
+  border-top: 1px solid rgba(255, 255, 255, 0.45);
   &:hover {
-    background: #f7f9ff;
+    background: rgba(255, 255, 255, 0.55);
   }
 }
 </style>
