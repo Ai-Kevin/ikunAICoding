@@ -59,47 +59,51 @@
         </div>
       </div>
 
-      <div class="bottom-row">
+      <div class="bottom-row" :class="{ 'bottom-row-full': activeTab === 'modules' }">
         <div class="glass-inner panel-pad module-card">
           <div class="card-head">
             <div class="section-title">模块列表</div>
             <el-button type="primary" :icon="Plus" size="small" @click="openCreateModule">新建模块</el-button>
           </div>
-          <el-table :data="pagedModules" style="width: 100%">
-            <el-table-column prop="name" label="模块名称" min-width="120">
+          <el-table :data="pagedModules" class="module-table" style="width: 100%">
+            <el-table-column prop="name" label="模块名称" min-width="128" show-overflow-tooltip align="left" header-align="center">
               <template #default="{ row }">
-                <el-icon style="vertical-align: middle; margin-right: 6px"><Folder /></el-icon>
-                {{ row.name }}
+                <span class="module-name-cell">
+                  <el-icon class="module-folder-icon"><Folder /></el-icon>
+                  {{ row.name }}
+                </span>
               </template>
             </el-table-column>
-            <el-table-column prop="type" label="类型" width="110">
+            <el-table-column prop="type" label="类型" width="96" align="center" header-align="center">
               <template #default="{ row }">
                 <el-tag size="small" effect="plain" :type="row.type === '系统模块' ? 'warning' : row.type === '客户端' ? 'info' : ''">
                   {{ row.type }}
                 </el-tag>
               </template>
             </el-table-column>
-            <el-table-column label="用例数" align="center">
-              <el-table-column prop="api_count" label="API" width="70" align="center" />
-              <el-table-column prop="ui_count" label="UI" width="70" align="center">
+            <el-table-column label="用例数" align="center" header-align="center">
+              <el-table-column prop="api_count" label="API" width="72" align="center" header-align="center" />
+              <el-table-column prop="ui_count" label="UI" width="72" align="center" header-align="center">
                 <template #default="{ row }">{{ row.ui_count || '—' }}</template>
               </el-table-column>
-              <el-table-column prop="perf_count" label="性能" width="70" align="center" />
+              <el-table-column prop="perf_count" label="性能" width="72" align="center" header-align="center" />
             </el-table-column>
-            <el-table-column prop="pass_rate" label="通过率" width="90">
+            <el-table-column prop="pass_rate" label="通过率" width="88" align="center" header-align="center">
               <template #default="{ row }">
                 <span class="rate">{{ row.pass_rate }}%</span>
               </template>
             </el-table-column>
-            <el-table-column prop="owner" label="负责人" width="90" />
-            <el-table-column prop="updated_at" label="更新时间" width="160">
+            <el-table-column prop="owner" label="负责人" min-width="88" align="center" header-align="center" />
+            <el-table-column prop="updated_at" label="更新时间" min-width="148" align="center" header-align="center">
               <template #default="{ row }">{{ formatDateTime(row.updated_at) }}</template>
             </el-table-column>
-            <el-table-column label="操作" width="160">
+            <el-table-column label="操作" width="160" align="center" header-align="center">
               <template #default="{ row }">
-                <el-button link type="primary" size="small" @click="openViewModule(row)">查看</el-button>
-                <el-button link type="primary" size="small" @click="openEditModule(row)">编辑</el-button>
-                <el-button link type="danger" size="small" @click="onDeleteModule(row)">删除</el-button>
+                <div class="row-link-actions">
+                  <button type="button" class="glass-inline-btn primary" @click="openViewModule(row)">查看</button>
+                  <button type="button" class="glass-inline-btn primary" @click="openEditModule(row)">编辑</button>
+                  <button type="button" class="glass-inline-btn danger" @click="onDeleteModule(row)">删除</button>
+                </div>
               </template>
             </el-table-column>
           </el-table>
@@ -116,7 +120,7 @@
           </div>
         </div>
 
-        <div class="glass-inner panel-pad info-card">
+        <div v-if="activeTab === 'overview'" class="glass-inner panel-pad info-card">
           <div class="section-title">项目信息</div>
           <div class="info-list">
             <div class="info-item"><span>项目ID：</span>{{ project.code }}</div>
@@ -167,7 +171,9 @@
         <el-table-column prop="email" label="邮箱" min-width="200" />
         <el-table-column label="操作" width="100">
           <template #default="{ row }">
-            <el-button link type="danger" size="small" @click="onRemoveMember(row)">移除</el-button>
+            <div class="row-link-actions">
+              <el-button link type="danger" size="small" @click="onRemoveMember(row)">移除</el-button>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -242,7 +248,9 @@
         <el-table-column prop="email" label="邮箱" />
         <el-table-column label="操作" width="80">
           <template #default="{ row }">
-            <el-button link type="danger" size="small" @click="onRemoveMember(row)">移除</el-button>
+            <div class="row-link-actions">
+              <el-button link type="danger" size="small" @click="onRemoveMember(row)">移除</el-button>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -545,6 +553,15 @@ onMounted(load)
   display: grid;
   grid-template-columns: 1fr 320px;
   gap: 16px;
+  min-width: 0;
+
+  &.bottom-row-full {
+    grid-template-columns: 1fr;
+  }
+}
+
+.module-card {
+  min-width: 0;
 }
 
 .card-head {
@@ -554,9 +571,143 @@ onMounted(load)
   margin-bottom: 14px;
 }
 
+.module-table {
+  width: 100%;
+
+  :deep(.el-table__header-wrapper table),
+  :deep(.el-table__body-wrapper table) {
+    width: 100% !important;
+  }
+
+  :deep(th.el-table__cell) {
+    text-align: center;
+  }
+
+  :deep(.el-table__cell) {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
+  :deep(th.el-table__cell:first-child),
+  :deep(td.el-table__cell:first-child) {
+    padding-right: 4px;
+  }
+
+  :deep(td.el-table__cell:first-child) {
+    text-align: left;
+  }
+
+  :deep(th.el-table__cell:nth-child(2)),
+  :deep(td.el-table__cell:nth-child(2)) {
+    padding-left: 4px;
+  }
+}
+
+.module-name-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  vertical-align: middle;
+}
+
+.module-folder-icon {
+  flex-shrink: 0;
+  color: var(--brand-primary);
+}
+
 .rate {
   color: var(--success);
   font-weight: 600;
+}
+
+.row-link-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  white-space: nowrap;
+  width: 100%;
+}
+
+.glass-inline-btn {
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.62);
+  backdrop-filter: blur(12px) saturate(170%);
+  -webkit-backdrop-filter: blur(12px) saturate(170%);
+  box-shadow:
+    0 1px 3px rgba(15, 23, 42, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.92);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.15s ease;
+
+  &.primary {
+    color: #007aff;
+
+    &:hover {
+      background: rgba(0, 122, 255, 0.14);
+      border-color: rgba(0, 122, 255, 0.38);
+      color: #0066d6;
+      box-shadow:
+        0 2px 6px rgba(0, 122, 255, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    }
+  }
+
+  &.danger {
+    color: #ff3b30;
+    border-color: rgba(255, 59, 48, 0.28);
+
+    &:hover {
+      background: rgba(255, 59, 48, 0.12);
+      border-color: rgba(255, 59, 48, 0.45);
+      color: #d70015;
+      box-shadow:
+        0 2px 6px rgba(255, 59, 48, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    }
+  }
+
+  &:active {
+    transform: scale(0.97);
+  }
+}
+
+.row-link-actions :deep(.el-button.is-link) {
+  padding: 0 4px;
+  height: auto;
+  min-height: unset;
+  font-size: 13px;
+  font-weight: 600;
+  opacity: 1;
+  -webkit-font-smoothing: antialiased;
+
+  &.el-button--primary {
+    color: #007aff;
+
+    &:hover {
+      color: #0066d6;
+    }
+  }
+
+  &.el-button--danger {
+    color: #ff3b30;
+
+    &:hover {
+      color: #d70015;
+    }
+  }
 }
 
 .table-foot {

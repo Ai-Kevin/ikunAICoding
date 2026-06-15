@@ -1,7 +1,10 @@
 from fastapi import APIRouter, Depends
+from sqlalchemy import func
+from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
-from app.models.models import User
+from app.core.database import get_db
+from app.models.models import ApiCase, UiCase, User
 from app.schemas.schemas import (
     DashboardData,
     ExecutionRecord,
@@ -15,12 +18,22 @@ from app.schemas.schemas import (
 router = APIRouter(prefix="/dashboard", tags=["工作台"])
 
 
+def _fmt_count(value: int) -> str:
+    return f"{value:,}" if value >= 1000 else str(value)
+
+
 @router.get("", response_model=DashboardData, summary="工作台概览数据")
-def dashboard(_: User = Depends(get_current_user)):
+def dashboard(
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+):
+    api_count = db.query(func.count(ApiCase.id)).scalar() or 0
+    ui_count = db.query(func.count(UiCase.id)).scalar() or 0
+
     return DashboardData(
         stats=[
-            StatCard(key="api", label="API 用例数", value="1,284", trend=12.5, trend_label="较上周"),
-            StatCard(key="ui", label="UI 用例数", value="326", trend=8.3, trend_label="较上周"),
+            StatCard(key="api", label="API 用例数", value=_fmt_count(api_count), trend=12.5, trend_label="较上周"),
+            StatCard(key="ui", label="UI 用例数", value=_fmt_count(ui_count), trend=8.3, trend_label="较上周"),
             StatCard(key="perf", label="性能脚本数", value="89", trend=5.6, trend_label="较上周"),
             StatCard(key="exec", label="今日执行次数", value="42", trend=16.7, trend_label="较昨日"),
             StatCard(key="rate", label="成功率", value="96.8%", trend=2.3, trend_label="较昨日"),

@@ -19,7 +19,15 @@ request.interceptors.response.use(
   (response) => response.data,
   (error) => {
     const status = error.response?.status
-    const detail = error.response?.data?.detail || '请求失败，请稍后重试'
+    const rawDetail = error.response?.data?.detail
+    let detail = '请求失败，请稍后重试'
+    if (typeof rawDetail === 'string') {
+      detail = rawDetail
+    } else if (Array.isArray(rawDetail)) {
+      detail = rawDetail.map((item) => item.msg || item.message || JSON.stringify(item)).join('；')
+    } else if (rawDetail && typeof rawDetail === 'object') {
+      detail = rawDetail.message || JSON.stringify(rawDetail)
+    }
     if (status === 401) {
       localStorage.removeItem('token')
       localStorage.removeItem('user')

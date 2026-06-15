@@ -32,9 +32,33 @@ const routes = [
       },
       {
         path: 'ui-test',
-        name: 'UiTest',
-        component: () => import('@/views/UiTest.vue'),
-        meta: { title: 'UI 测试', icon: 'Monitor' },
+        name: 'UiTestHome',
+        component: () => import('@/views/ui-test/UiTestHome.vue'),
+        meta: { title: '测试看板', icon: 'Monitor', menuGroup: 'ui-test' },
+      },
+      {
+        path: 'ui-test/cases',
+        name: 'UiTestCases',
+        component: () => import('@/views/ui-test/UiTestCases.vue'),
+        meta: { title: '用例管理', menuGroup: 'ui-test' },
+      },
+      {
+        path: 'ui-test/run',
+        name: 'UiTestRun',
+        component: () => import('@/views/ui-test/UiTestRun.vue'),
+        meta: { title: '测试执行', menuGroup: 'ui-test' },
+      },
+      {
+        path: 'ui-test/records',
+        name: 'UiTestRecords',
+        component: () => import('@/views/ui-test/UiTestRecords.vue'),
+        meta: { title: '执行记录', menuGroup: 'ui-test' },
+      },
+      {
+        path: 'ui-test/reports',
+        name: 'UiTestReports',
+        component: () => import('@/views/ui-test/UiTestReports.vue'),
+        meta: { title: '测试报告', menuGroup: 'ui-test' },
       },
       {
         path: 'performance',

@@ -1,5 +1,7 @@
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
+
+from sqlalchemy import inspect, text
 
 from app.core.database import Base, SessionLocal, engine
 from app.core.security import get_password_hash
@@ -9,12 +11,103 @@ from app.models.models import (
     Project,
     ProjectMember,
     UiCase,
+    UiExecutionRecord,
     User,
 )
 
 
+def migrate_ui_case_columns() -> None:
+    inspector = inspect(engine)
+    if "ui_cases" not in inspector.get_table_names():
+        return
+    columns = {col["name"] for col in inspector.get_columns("ui_cases")}
+    statements = []
+    if "tags" not in columns:
+        statements.append("ALTER TABLE ui_cases ADD COLUMN tags VARCHAR(255) DEFAULT ''")
+    if "filename" not in columns:
+        statements.append("ALTER TABLE ui_cases ADD COLUMN filename VARCHAR(128) DEFAULT ''")
+    if "is_enabled" not in columns:
+        statements.append("ALTER TABLE ui_cases ADD COLUMN is_enabled INTEGER DEFAULT 1")
+    if "created_at" not in columns:
+        statements.append("ALTER TABLE ui_cases ADD COLUMN created_at DATETIME")
+    if not statements:
+        return
+    with engine.begin() as conn:
+        for stmt in statements:
+            conn.execute(text(stmt))
+    columns = {col["name"] for col in inspect(engine).get_columns("ui_cases")}
+    if "created_at" in columns:
+        with engine.begin() as conn:
+            conn.execute(
+                text(
+                    "UPDATE ui_cases SET created_at = updated_at "
+                    "WHERE created_at IS NULL"
+                )
+            )
+
+
+def seed_ui_executions() -> None:
+    db = SessionLocal()
+    try:
+        if db.query(UiExecutionRecord).first():
+            return
+
+        demo_rows = [
+            ("20240615103225001", "登录功能测试", "测试环境", 1, 1, 0, 0, 100.0, 35, "Docker 执行机-01", "admin", "成功", datetime(2024, 6, 15, 10, 32, 25)),
+            ("20240615104532002", "购物车结算流程", "测试环境", 3, 3, 0, 0, 100.0, 72, "Docker 执行机-01", "admin", "成功", datetime(2024, 6, 15, 10, 45, 32)),
+            ("20240615112015003", "支付密码校验", "测试环境", 2, 1, 1, 0, 50.0, 48, "Docker 执行机-01", "test01", "失败", datetime(2024, 6, 15, 11, 20, 15)),
+            ("20240614153022004", "验证码登录测试", "预发环境", 1, 1, 0, 0, 100.0, 28, "本地执行", "admin", "成功", datetime(2024, 6, 14, 15, 30, 22)),
+            ("20240614181543005", "用户中心信息修改", "测试环境", 4, 2, 2, 0, 50.0, 95, "Docker 执行机-02", "李四", "失败", datetime(2024, 6, 14, 18, 15, 43)),
+            ("20240614102008006", "商品详情页展示", "测试环境", 2, 2, 0, 0, 100.0, 41, "Docker 执行机-01", "王五", "成功", datetime(2024, 6, 14, 10, 20, 8)),
+            ("20240613164512007", "下单收货地址校验", "测试环境", 5, 4, 1, 0, 80.0, 118, "Docker 执行机-01", "赵六", "失败", datetime(2024, 6, 13, 16, 45, 12)),
+            ("20240613113055008", "登录功能测试", "测试环境", 1, 1, 0, 0, 100.0, 33, "Docker 执行机-02", "admin", "成功", datetime(2024, 6, 13, 11, 30, 55)),
+            ("20240612142030009", "购物车添加商品测试", "预发环境", 2, 2, 0, 0, 100.0, 56, "本地执行", "test01", "成功", datetime(2024, 6, 12, 14, 20, 30)),
+            ("20240612101518010", "支付密码校验", "测试环境", 3, 2, 1, 0, 66.7, 89, "Docker 执行机-01", "张三", "失败", datetime(2024, 6, 12, 10, 15, 18)),
+            ("20240611163042011", "批量执行-5个用例", "测试环境", 5, 5, 0, 0, 100.0, 138, "Docker 执行机-01", "admin", "成功", datetime(2024, 6, 11, 16, 30, 42)),
+            ("20240611104508012", "记住登录测试", "测试环境", 1, 0, 1, 0, 0.0, 22, "Docker 执行机-02", "李四", "失败", datetime(2024, 6, 11, 10, 45, 8)),
+            ("20240610152033013", "验证码登录测试", "测试环境", 2, 2, 0, 0, 100.0, 44, "Docker 执行机-01", "王五", "成功", datetime(2024, 6, 10, 15, 20, 33)),
+            ("20240610103527014", "登录功能测试", "生产环境", 1, 1, 0, 0, 100.0, 31, "本地执行", "admin", "成功", datetime(2024, 6, 10, 10, 35, 27)),
+            ("20240609141852015", "购物车结算流程", "测试环境", 4, 3, 1, 0, 75.0, 102, "Docker 执行机-01", "test01", "失败", datetime(2024, 6, 9, 14, 18, 52)),
+            ("20240609103015016", "用户中心信息修改", "测试环境", 2, 2, 0, 0, 100.0, 52, "Docker 执行机-02", "赵六", "成功", datetime(2024, 6, 9, 10, 30, 15)),
+            ("20240608162548017", "商品详情页展示", "预发环境", 1, 1, 0, 0, 100.0, 26, "Docker 执行机-01", "张三", "成功", datetime(2024, 6, 8, 16, 25, 48)),
+            ("20240608111022018", "支付密码校验", "测试环境", 3, 3, 0, 0, 100.0, 67, "Docker 执行机-01", "admin", "成功", datetime(2024, 6, 8, 11, 10, 22)),
+            ("20240607153008019", "下单收货地址校验", "测试环境", 2, 1, 1, 0, 50.0, 58, "本地执行", "李四", "失败", datetime(2024, 6, 7, 15, 30, 8)),
+            ("20240607104533020", "登录功能测试", "测试环境", 1, 1, 0, 0, 100.0, 34, "Docker 执行机-01", "王五", "成功", datetime(2024, 6, 7, 10, 45, 33)),
+        ]
+
+        for row in demo_rows:
+            task_id, name, env, total, succ, fail, skip, rate, dur, machine, creator, status, start = row
+            end = start + timedelta(seconds=dur)
+            db.add(
+                UiExecutionRecord(
+                    task_id=task_id,
+                    name=name,
+                    env=env,
+                    total_cases=total,
+                    success_count=succ,
+                    fail_count=fail,
+                    skip_count=skip,
+                    success_rate=rate,
+                    duration_seconds=dur,
+                    machine=machine,
+                    mode="parallel",
+                    creator=creator,
+                    status=status,
+                    logs=f"[INFO] 任务 {task_id} 执行完成\n[INFO] 成功 {succ} · 失败 {fail}",
+                    start_time=start,
+                    end_time=end,
+                )
+            )
+
+        db.commit()
+    finally:
+        db.close()
+
+
 def init_db() -> None:
     Base.metadata.create_all(bind=engine)
+    migrate_ui_case_columns()
+    seed_ui_executions()
     db = SessionLocal()
     try:
         if db.query(User).first():
@@ -119,14 +212,15 @@ def init_db() -> None:
             return json.dumps(steps, ensure_ascii=False)
 
         ui_cases = [
-            UiCase(name="登录功能测试", module="登录模块", browser="Chrome", priority="高", status="已通过", step_count=len(login_steps), creator="Admin", steps=steps_json(login_steps)),
-            UiCase(name="验证码登录测试", module="登录模块", browser="Chrome", priority="中", status="已通过", step_count=6, creator="Admin", steps=steps_json(login_steps[:6])),
-            UiCase(name="记住登录测试", module="登录模块", browser="Chrome", priority="低", status="未执行", step_count=5, creator="Admin", steps=steps_json(login_steps[:5])),
-            UiCase(name="购物车结算流程", module="购物车模块", browser="Chrome", priority="高", status="已通过", step_count=7, creator="李四", steps=steps_json(login_steps)),
-            UiCase(name="下单收货地址校验", module="下单模块", browser="Firefox", priority="中", status="失败", step_count=7, creator="王五", steps=steps_json(login_steps)),
-            UiCase(name="支付密码校验", module="支付模块", browser="Chrome", priority="高", status="已通过", step_count=7, creator="赵六", steps=steps_json(login_steps)),
-            UiCase(name="用户中心信息修改", module="用户中心", browser="Edge", priority="中", status="已通过", step_count=7, creator="张三", steps=steps_json(login_steps)),
-            UiCase(name="商品详情页展示", module="商品模块", browser="Chrome", priority="中", status="已通过", step_count=6, creator="李四", steps=steps_json(login_steps[:6])),
+            UiCase(name="登录功能测试", module="登录模块", browser="Chrome", priority="高", status="已通过", tags="smoke,P0", filename="test_login.py", is_enabled=1, step_count=len(login_steps), creator="admin", steps=steps_json(login_steps)),
+            UiCase(name="验证码登录测试", module="登录模块", browser="Chrome", priority="中", status="已通过", tags="regression,P1", filename="test_login_sms.py", is_enabled=1, step_count=6, creator="admin", steps=steps_json(login_steps[:6])),
+            UiCase(name="记住登录测试", module="登录模块", browser="Chrome", priority="低", status="未执行", tags="P2", filename="test_remember_login.py", is_enabled=0, step_count=5, creator="admin", steps=steps_json(login_steps[:5])),
+            UiCase(name="购物车添加商品测试", module="购物车模块", browser="Chrome", priority="高", status="已通过", tags="smoke,P0", filename="test_cart_add.py", is_enabled=1, step_count=7, creator="test01", steps=steps_json(login_steps)),
+            UiCase(name="购物车结算流程", module="购物车模块", browser="Chrome", priority="高", status="已通过", tags="regression,P0", filename="test_cart_checkout.py", is_enabled=1, step_count=7, creator="李四", steps=steps_json(login_steps)),
+            UiCase(name="下单收货地址校验", module="下单模块", browser="Firefox", priority="中", status="失败", tags="regression,P1", filename="test_order_address.py", is_enabled=1, step_count=7, creator="王五", steps=steps_json(login_steps)),
+            UiCase(name="支付密码校验", module="支付模块", browser="Chrome", priority="高", status="已通过", tags="smoke,P0", filename="test_pay_password.py", is_enabled=1, step_count=7, creator="赵六", steps=steps_json(login_steps)),
+            UiCase(name="用户中心信息修改", module="用户中心", browser="Edge", priority="中", status="已通过", tags="P1", filename="test_profile_edit.py", is_enabled=1, step_count=7, creator="张三", steps=steps_json(login_steps)),
+            UiCase(name="商品详情页展示", module="商品模块", browser="Chrome", priority="中", status="已通过", tags="regression,P2", filename="test_product_detail.py", is_enabled=1, step_count=6, creator="李四", steps=steps_json(login_steps[:6])),
         ]
         db.add_all(ui_cases)
 

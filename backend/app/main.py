@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from app.api import auth, cases, dashboard, plans, projects
+from app.api import auth, cases, dashboard, plans, projects, ui_executions
 from app.core.config import settings
 from app.seed import init_db
 
@@ -16,6 +16,7 @@ app = FastAPI(
 
 upload_root = Path(__file__).resolve().parent.parent / "uploads"
 (upload_root / "avatars").mkdir(parents=True, exist_ok=True)
+(upload_root / "ui_scripts").mkdir(parents=True, exist_ok=True)
 
 app.add_middleware(
     CORSMiddleware,
@@ -43,3 +44,4 @@ app.include_router(dashboard.router, prefix=api_prefix)
 app.include_router(projects.router, prefix=api_prefix)
 app.include_router(cases.router, prefix=api_prefix)
 app.include_router(plans.router, prefix=api_prefix)
+app.include_router(ui_executions.router, prefix=api_prefix)

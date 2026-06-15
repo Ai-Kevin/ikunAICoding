@@ -124,10 +124,14 @@ class UiCase(Base):
     module = Column(String(64), default="")
     browser = Column(String(32), default="Chrome")
     priority = Column(String(16), default="中")
-    status = Column(String(16), default="已通过")
+    status = Column(String(16), default="未执行")
+    tags = Column(String(255), default="")
+    filename = Column(String(128), default="")
+    is_enabled = Column(Integer, default=1)
     step_count = Column(Integer, default=0)
     creator = Column(String(64), default="Admin")
     steps = Column(Text, default="[]")  # JSON list of step dicts
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
     updated_at = Column(DateTime, default=datetime.utcnow)
 
 
@@ -141,3 +145,25 @@ class TestPlan(Base):
     status = Column(String(16), default="待执行")
     description = Column(Text, default="")
     created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class UiExecutionRecord(Base):
+    __tablename__ = "ui_execution_records"
+
+    id = Column(Integer, primary_key=True, index=True)
+    task_id = Column(String(32), unique=True, index=True, nullable=False)
+    name = Column(String(128), nullable=False)
+    env = Column(String(32), default="测试环境")
+    total_cases = Column(Integer, default=0)
+    success_count = Column(Integer, default=0)
+    fail_count = Column(Integer, default=0)
+    skip_count = Column(Integer, default=0)
+    success_rate = Column(Float, default=0.0)
+    duration_seconds = Column(Integer, default=0)
+    machine = Column(String(64), default="Docker 执行机-01")
+    mode = Column(String(16), default="parallel")
+    creator = Column(String(64), default="admin")
+    status = Column(String(16), default="成功")
+    logs = Column(Text, default="")
+    start_time = Column(DateTime, default=datetime.utcnow, index=True)
+    end_time = Column(DateTime, default=datetime.utcnow)

@@ -174,7 +174,7 @@ const iconBg = [
 
 const quickItems = [
   { title: '新建 API 用例', icon: Connection, color: '#007aff', to: '/api-test' },
-  { title: '新建 UI 用例', icon: Monitor, color: '#34c759', to: '/ui-test' },
+  { title: '新建 UI 用例', icon: Monitor, color: '#34c759', to: '/ui-test/cases' },
   { title: '新建性能任务', icon: Setting, color: '#5856d6', to: '/performance' },
   { title: '创建测试计划', icon: Calendar, color: '#ff9500', action: 'plan' },
   { title: '查看测试报告', icon: Document, color: '#007aff', to: '/reports' },

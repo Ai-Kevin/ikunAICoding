@@ -1,9 +1,11 @@
 import json
 import re
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
+from pathlib import Path
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
@@ -17,11 +19,22 @@ from app.schemas.schemas import (
     ApiRunResponse,
     UiCaseCreate,
     UiCaseOut,
+    UiCaseStatsResponse,
+    UiCaseStatItem,
     UiCaseUpdate,
+    UiCaseUploadPreview,
     UiRunResponse,
+)
+from app.utils.ui_script_parser import (
+    MAX_UI_SCRIPT_SIZE,
+    parse_ui_script,
+    validate_py_filename,
 )
 
 router = APIRouter(tags=["用例管理"])
+
+UI_SCRIPT_DIR = Path(__file__).resolve().parents[2] / "uploads" / "ui_scripts"
+UI_SCRIPT_DIR.mkdir(parents=True, exist_ok=True)
 
 
 # ==================== API 用例 ====================
@@ -272,6 +285,168 @@ def _ui_to_out(case: UiCase) -> UiCaseOut:
     return UiCaseOut.model_validate(case)
 
 
+async def _read_and_validate_py(file: UploadFile) -> tuple[str, str]:
+    filename = (file.filename or "").strip()
+    if not filename:
+        raise HTTPException(status_code=400, detail="未选择文件")
+    try:
+        validate_py_filename(filename)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    content = await file.read()
+    if not content:
+        raise HTTPException(status_code=400, detail="上传文件为空")
+    if len(content) > MAX_UI_SCRIPT_SIZE:
+        raise HTTPException(status_code=400, detail="单个文件大小不能超过 10MB")
+
+    try:
+        text = content.decode("utf-8-sig")
+    except UnicodeDecodeError as exc:
+        raise HTTPException(status_code=400, detail="文件编码建议为 UTF-8") from exc
+
+    return filename, text
+
+
+@router.post("/ui-cases/upload/parse", response_model=UiCaseUploadPreview, summary="解析上传的 UI 脚本")
+async def parse_ui_case_upload(
+    file: UploadFile = File(...),
+    _: User = Depends(get_current_user),
+):
+    filename, text = await _read_and_validate_py(file)
+    parsed = parse_ui_script(text, filename)
+    return UiCaseUploadPreview(**parsed)
+
+
+@router.post("/ui-cases/upload", response_model=UiCaseOut, summary="上传并创建 UI 用例")
+async def upload_ui_case(
+    file: UploadFile = File(...),
+    name: str = Form(...),
+    module: str = Form("默认模块"),
+    tags: str = Form(""),
+    browser: str = Form("Chrome"),
+    priority: str = Form("中"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    filename, text = await _read_and_validate_py(file)
+    parsed = parse_ui_script(text, filename)
+
+    exists = db.query(UiCase).filter(UiCase.filename == filename).first()
+    if exists:
+        raise HTTPException(status_code=400, detail=f"文件名 {filename} 已存在")
+
+    file_path = UI_SCRIPT_DIR / filename
+    file_path.write_text(text, encoding="utf-8")
+
+    steps = parsed["steps"]
+    case = UiCase(
+        name=name.strip() or parsed["name"],
+        module=module.strip() or parsed["module"],
+        browser=browser,
+        priority=priority,
+        status="未执行",
+        tags=tags.strip() or parsed["tags"],
+        filename=filename,
+        is_enabled=1,
+        step_count=len(steps),
+        creator=current_user.username,
+        steps=json.dumps(steps, ensure_ascii=False),
+    )
+    db.add(case)
+    db.commit()
+    db.refresh(case)
+    return case
+
+
+def _ui_case_trend(current: int, previous: int, *, reverse: bool = False) -> tuple[str, bool]:
+    diff = current - previous
+    if diff > 0:
+        text = f"+{diff}"
+    elif diff < 0:
+        text = str(diff)
+    else:
+        text = "持平"
+    up = diff <= 0 if reverse else diff >= 0
+    return text, up
+
+
+def _distinct_module_count(db: Session, before: datetime | None = None) -> int:
+    query = db.query(func.count(func.distinct(UiCase.module))).filter(UiCase.module != "")
+    if before is not None:
+        query = query.filter(UiCase.created_at <= before)
+    return query.scalar() or 0
+
+
+@router.get("/ui-case-stats", response_model=UiCaseStatsResponse, summary="UI 用例统计")
+def ui_case_stats(
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+):
+    now = datetime.now()
+    week_start = now - timedelta(days=7)
+
+    total = db.query(UiCase).count()
+    total_prev = db.query(UiCase).filter(UiCase.created_at <= week_start).count()
+
+    enabled = db.query(UiCase).filter(UiCase.is_enabled == 1).count()
+    enabled_prev = (
+        db.query(UiCase)
+        .filter(UiCase.created_at <= week_start, UiCase.is_enabled == 1)
+        .count()
+    )
+
+    disabled = total - enabled
+    disabled_prev = total_prev - enabled_prev
+
+    modules = _distinct_module_count(db)
+    modules_prev = _distinct_module_count(db, week_start)
+
+    trends = {
+        "total": _ui_case_trend(total, total_prev),
+        "enabled": _ui_case_trend(enabled, enabled_prev),
+        "disabled": _ui_case_trend(disabled, disabled_prev, reverse=True),
+        "modules": _ui_case_trend(modules, modules_prev),
+    }
+
+    return UiCaseStatsResponse(
+        stats=[
+            UiCaseStatItem(
+                key="total",
+                label="用例总数",
+                value=total,
+                trend_label="较上周",
+                trend_text=trends["total"][0],
+                trend_up=trends["total"][1],
+            ),
+            UiCaseStatItem(
+                key="enabled",
+                label="启用用例",
+                value=enabled,
+                trend_label="较上周",
+                trend_text=trends["enabled"][0],
+                trend_up=trends["enabled"][1],
+            ),
+            UiCaseStatItem(
+                key="disabled",
+                label="禁用用例",
+                value=disabled,
+                trend_label="较上周",
+                trend_text=trends["disabled"][0],
+                trend_up=trends["disabled"][1],
+            ),
+            UiCaseStatItem(
+                key="modules",
+                label="用例模块",
+                value=modules,
+                trend_label="较上周",
+                trend_text=trends["modules"][0],
+                trend_up=trends["modules"][1],
+            ),
+        ]
+    )
+
+
 @router.get("/ui-cases", response_model=list[UiCaseOut], summary="UI 用例列表")
 def list_ui_cases(
     keyword: str | None = None,
@@ -292,6 +467,8 @@ def create_ui_case(
 ):
     data = payload.model_dump()
     steps = data.pop("steps", [])
+    if "is_enabled" in data:
+        data["is_enabled"] = 1 if data["is_enabled"] else 0
     case = UiCase(
         **data,
         steps=json.dumps(steps, ensure_ascii=False),
@@ -315,6 +492,8 @@ def update_ui_case(
         raise HTTPException(status_code=404, detail="用例不存在")
     data = payload.model_dump()
     steps = data.pop("steps", [])
+    if "is_enabled" in data:
+        data["is_enabled"] = 1 if data["is_enabled"] else 0
     for key, value in data.items():
         setattr(case, key, value)
     case.steps = json.dumps(steps, ensure_ascii=False)

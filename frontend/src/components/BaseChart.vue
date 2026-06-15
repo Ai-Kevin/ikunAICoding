@@ -20,6 +20,18 @@ const render = () => {
 
 const resize = () => chart && chart.resize()
 
+const getDataUrl = (options = {}) => {
+  if (!chart) return ''
+  return chart.getDataURL({
+    type: 'png',
+    pixelRatio: 2,
+    backgroundColor: '#ffffff',
+    ...options,
+  })
+}
+
+defineExpose({ getDataUrl })
+
 onMounted(async () => {
   await nextTick()
   chart = echarts.init(chartEl.value)

@@ -49,6 +49,7 @@ export const caseApi = {
     request.delete(`/api-cases/module/${encodeURIComponent(name)}`),
   // UI cases
   uiCases: (keyword) => request.get('/ui-cases', { params: { keyword } }),
+  uiCaseStats: () => request.get('/ui-case-stats'),
   createUiCase: (data) => request.post('/ui-cases', data),
   updateUiCase: (id, data) => request.put(`/ui-cases/${id}`, data),
   removeUiCase: (id) => request.delete(`/ui-cases/${id}`),
@@ -59,10 +60,33 @@ export const caseApi = {
     }),
   removeUiModule: (name) =>
     request.delete(`/ui-cases/module/${encodeURIComponent(name)}`),
+  parseUiUpload: (file) => {
+    const form = new FormData()
+    form.append('file', file)
+    return request.post('/ui-cases/upload/parse', form)
+  },
+  uploadUiCase: (file, data) => {
+    const form = new FormData()
+    form.append('file', file)
+    form.append('name', data.name)
+    form.append('module', data.module || '')
+    form.append('tags', data.tags || '')
+    form.append('browser', data.browser || 'Chrome')
+    form.append('priority', data.priority || '中')
+    return request.post('/ui-cases/upload', form)
+  },
 }
 
 export const planApi = {
   list: () => request.get('/test-plans'),
   create: (data) => request.post('/test-plans', data),
   remove: (id) => request.delete(`/test-plans/${id}`),
+}
+
+export const uiExecutionApi = {
+  stats: () => request.get('/ui-executions/stats'),
+  list: (params) => request.get('/ui-executions', { params }),
+  detail: (id) => request.get(`/ui-executions/${id}`),
+  create: (data) => request.post('/ui-executions', data),
+  remove: (id) => request.delete(`/ui-executions/${id}`),
 }

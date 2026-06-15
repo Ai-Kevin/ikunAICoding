@@ -17,20 +17,32 @@
 
       <el-menu
         :default-active="activeMenu"
+        :default-openeds="defaultOpeneds"
         class="side-menu"
         :collapse="collapsed"
         :collapse-transition="false"
         router
         background-color="transparent"
       >
-        <el-menu-item
-          v-for="item in menuItems"
-          :key="item.path"
-          :index="item.path"
-        >
-          <el-icon><component :is="item.icon" /></el-icon>
-          <template #title>{{ item.title }}</template>
-        </el-menu-item>
+        <template v-for="item in menuItems" :key="item.path || item.key">
+          <el-sub-menu v-if="item.children" :index="item.key">
+            <template #title>
+              <el-icon><component :is="item.icon" /></el-icon>
+              <span>{{ item.title }}</span>
+            </template>
+            <el-menu-item
+              v-for="child in item.children"
+              :key="`${child.path}-${child.title}`"
+              :index="child.path"
+            >
+              {{ child.title }}
+            </el-menu-item>
+          </el-sub-menu>
+          <el-menu-item v-else :index="item.path">
+            <el-icon><component :is="item.icon" /></el-icon>
+            <template #title>{{ item.title }}</template>
+          </el-menu-item>
+        </template>
       </el-menu>
 
       <div class="sidebar-foot" @click="toggleSidebar">
@@ -127,6 +139,10 @@ const userInitial = computed(() =>
 )
 const activeMenu = computed(() => route.path)
 
+const defaultOpeneds = computed(() =>
+  route.path.startsWith('/ui-test') ? ['ui-test'] : []
+)
+
 const notifications = [
   '【支付接口专项测试】执行失败，成功率 85.7%',
   '回归测试计划已完成，通过率 98.3%',
@@ -176,7 +192,18 @@ const menuItems = [
   { path: '/dashboard', title: '首页', icon: 'HomeFilled' },
   { path: '/projects', title: '项目管理', icon: 'Folder' },
   { path: '/api-test', title: 'API 测试', icon: 'Connection' },
-  { path: '/ui-test', title: 'UI 测试', icon: 'Monitor' },
+  {
+    key: 'ui-test',
+    title: 'UI 测试',
+    icon: 'Monitor',
+    children: [
+      { path: '/ui-test', title: '测试看板' },
+      { path: '/ui-test/cases', title: '用例管理' },
+      { path: '/ui-test/run', title: '测试执行' },
+      { path: '/ui-test/records', title: '执行记录' },
+      { path: '/ui-test/reports', title: '测试报告' },
+    ],
+  },
   { path: '/performance', title: '性能测试', icon: 'TrendCharts' },
   { path: '/plans', title: '测试计划', icon: 'List' },
   { path: '/executions', title: '执行记录', icon: 'VideoPlay' },
@@ -493,6 +520,148 @@ $sidebar-duration: 0.38s;
       &::after {
         opacity: 0.6;
       }
+    }
+  }
+
+  :deep(.el-sub-menu) {
+    margin-bottom: 2px;
+
+    .el-sub-menu__title {
+      position: relative;
+      overflow: hidden;
+      height: 42px;
+      border-radius: var(--glass-radius-sm);
+      color: var(--text-regular);
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: -0.01em;
+      border: 1px solid transparent;
+      background: transparent !important;
+      transition:
+        background 0.28s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+        border-color 0.28s ease,
+        box-shadow 0.28s ease,
+        color 0.28s ease,
+        transform 0.28s ease;
+
+      .el-icon {
+        font-size: 17px;
+        transition: color 0.28s ease, filter 0.28s ease;
+      }
+
+      &::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        padding: 1px;
+        background: linear-gradient(
+          135deg,
+          rgba(255, 255, 255, 0.72) 0%,
+          rgba(255, 255, 255, 0.12) 48%,
+          rgba(255, 255, 255, 0.38) 100%
+        );
+        -webkit-mask:
+          linear-gradient(#fff 0 0) content-box,
+          linear-gradient(#fff 0 0);
+        -webkit-mask-composite: xor;
+        mask-composite: exclude;
+        opacity: 0;
+        transition: opacity 0.28s ease;
+        pointer-events: none;
+      }
+
+      &::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        background: linear-gradient(
+          125deg,
+          rgba(255, 255, 255, 0.28) 0%,
+          rgba(255, 255, 255, 0.04) 42%,
+          transparent 68%
+        );
+        opacity: 0;
+        transition: opacity 0.28s ease;
+        pointer-events: none;
+      }
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.28) !important;
+        backdrop-filter: blur(22px) saturate(195%);
+        -webkit-backdrop-filter: blur(22px) saturate(195%);
+        border-color: rgba(255, 255, 255, 0.52);
+        color: var(--brand-primary);
+        box-shadow:
+          0 4px 18px rgba(0, 122, 255, 0.08),
+          inset 0 1px 0 rgba(255, 255, 255, 0.48),
+          inset 0 -1px 0 rgba(255, 255, 255, 0.12);
+        transform: translateX(2px);
+
+        &::before {
+          opacity: 0.75;
+        }
+
+        &::after {
+          opacity: 0.85;
+        }
+
+        .el-icon {
+          filter: drop-shadow(0 0 4px rgba(0, 122, 255, 0.25));
+        }
+      }
+    }
+
+    &.is-active > .el-sub-menu__title {
+      background: rgba(0, 122, 255, 0.16) !important;
+      backdrop-filter: blur(24px) saturate(200%);
+      -webkit-backdrop-filter: blur(24px) saturate(200%);
+      color: var(--menu-active-color);
+      font-weight: 600;
+      border-color: rgba(0, 122, 255, 0.22);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.75),
+        0 4px 16px rgba(0, 122, 255, 0.12);
+
+      .el-icon {
+        color: var(--brand-primary);
+      }
+
+      &::before {
+        opacity: 0.55;
+        background: linear-gradient(
+          135deg,
+          rgba(255, 255, 255, 0.65) 0%,
+          rgba(0, 122, 255, 0.08) 50%,
+          rgba(255, 255, 255, 0.35) 100%
+        );
+      }
+
+      &:hover {
+        background: rgba(0, 122, 255, 0.22) !important;
+        border-color: rgba(0, 122, 255, 0.3);
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.65),
+          0 6px 20px rgba(0, 122, 255, 0.14);
+        transform: translateX(2px);
+
+        &::before {
+          opacity: 0.85;
+        }
+
+        &::after {
+          opacity: 0.6;
+        }
+      }
+    }
+
+    .el-menu--inline .el-menu-item {
+      height: 38px;
+      margin-left: 4px;
+      margin-right: 0;
+      padding-left: 38px !important;
+      border-radius: var(--glass-radius-sm);
     }
   }
 }

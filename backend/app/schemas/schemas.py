@@ -192,6 +192,9 @@ class UiCaseBase(BaseModel):
     browser: str = "Chrome"
     priority: str = "中"
     status: str = "未执行"
+    tags: str = ""
+    filename: str = ""
+    is_enabled: bool = True
     creator: str = "Admin"
     steps: list[UiStep] = []
 
@@ -211,10 +214,21 @@ class UiCaseOut(BaseModel):
     browser: str
     priority: str
     status: str
+    tags: str = ""
+    filename: str = ""
+    is_enabled: bool = True
     step_count: int
     creator: str
     steps: list[UiStep] = []
+    created_at: datetime | None = None
     updated_at: datetime
+
+    @field_validator("is_enabled", mode="before")
+    @classmethod
+    def parse_enabled(cls, v):
+        if isinstance(v, bool):
+            return v
+        return bool(v)
 
     @field_validator("steps", mode="before")
     @classmethod
@@ -230,6 +244,32 @@ class UiCaseOut(BaseModel):
         from_attributes = True
 
 
+class UiCaseStatItem(BaseModel):
+    key: str
+    label: str
+    value: int
+    trend_label: str
+    trend_text: str
+    trend_up: bool
+
+
+class UiCaseStatsResponse(BaseModel):
+    stats: list[UiCaseStatItem]
+
+
+class UiCaseUploadPreview(BaseModel):
+    filename: str
+    name: str
+    module: str
+    tags: str = ""
+    browser: str = "Chrome"
+    priority: str = "中"
+    line_count: int
+    file_size: int
+    steps: list[UiStep] = []
+    script_preview: str = ""
+
+
 class UiRunLog(BaseModel):
     time: str
     step: str
@@ -240,6 +280,63 @@ class UiRunLog(BaseModel):
 class UiRunResponse(BaseModel):
     status: str
     logs: list[UiRunLog]
+
+
+# ---------- UI Execution Records ----------
+class UiExecutionCreate(BaseModel):
+    name: str
+    env: str = "测试环境"
+    total_cases: int
+    success_count: int
+    fail_count: int = 0
+    skip_count: int = 0
+    duration_seconds: int
+    machine: str = "Docker 执行机-01"
+    mode: str = "parallel"
+    browser: str = "Chrome"
+    logs: str = ""
+    start_time: datetime | None = None
+    end_time: datetime | None = None
+
+
+class UiExecutionOut(BaseModel):
+    id: int
+    task_id: str
+    name: str
+    env: str
+    total_cases: int
+    success_count: int
+    fail_count: int
+    skip_count: int
+    success_rate: float
+    duration_seconds: int
+    machine: str
+    mode: str
+    creator: str
+    status: str
+    start_time: datetime
+    end_time: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class UiExecutionListResponse(BaseModel):
+    items: list[UiExecutionOut]
+    total: int
+
+
+class UiExecutionStatItem(BaseModel):
+    key: str
+    label: str
+    value: str
+    trend_label: str
+    trend_text: str
+    trend_up: bool
+
+
+class UiExecutionStatsResponse(BaseModel):
+    stats: list[UiExecutionStatItem]
 
 
 # ---------- Test Plan ----------
